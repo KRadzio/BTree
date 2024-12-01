@@ -18,3 +18,8 @@ void BTree::SetOrder(unsigned int order)
     rootNodeNum = 0;
     FileManager::GetInstance().ClearBothFiles();
 }
+
+void BTree::Search() {}
+void BTree::Add() {}
+void BTree::Delete() {}
+void BTree::Diplay() {}

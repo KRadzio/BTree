@@ -18,6 +18,10 @@ public:
     static BTree &GetInstance();
     void SetOrder(unsigned int order); // changes the order of the tree and resets the tree
 
+    void Search();
+    void Add();
+    void Delete();
+    void Diplay();
     // search
     // add
     // delete

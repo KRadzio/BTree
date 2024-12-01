@@ -17,9 +17,16 @@
 
 int main()
 {
+    Node newNode;
     BTree::GetInstance();
     Node d = FileManager::GetInstance().GetNode(2);
     std::cout << d.parentNodeNum << std::endl;
     std::cout << d.usedIndexes << std::endl;
+    d.usedIndexes = 20;
+    d.parentNodeNum = 235;
+    d.childrenNodesNumbers[0] = 25;
+    d.indexes[0].index = 42;
+    d.indexes[0].pageNumber = 84;
+    FileManager::GetInstance().UpdateNode(d,1);
     return 0;
 }

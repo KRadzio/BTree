@@ -47,7 +47,7 @@ Node FileManager::GetNode(size_t nodeNumber)
     for (unsigned int i = 0; i < nodeSize; i++)
     {
         // record
-        getline(file,line);
+        getline(file, line);
         ss = std::stringstream(line);
         RecordIndex ri;
         getline(ss, line, DELIMITER);
@@ -55,18 +55,49 @@ Node FileManager::GetNode(size_t nodeNumber)
         getline(ss, line);
         ri.pageNumber = std::stoul(line);
         n.indexes[i] = ri;
-        //child node
+        // child node
         getline(file, line);
-         n.childrenNodesNumbers[i+1] = std::stoul(line);
+        n.childrenNodesNumbers[i + 1] = std::stoul(line);
     }
     file.close();
     return n;
 }
 
-void FileManager::InsertNewNode(Node &node) {}
-void FileManager::UpdateNode(Node &node, size_t nodeNumber) {}
-void FileManager::UpdateDataPage(size_t pageNum, RecordData &newRecord) {}
-void FileManager::InsertNewRecord(RecordData &newRecord) {}
+void FileManager::InsertNewNode(Node &node) {} // check if there are empty then either update the empty one or create new one
+void FileManager::UpdateNode(Node &node, size_t nodeNumber)
+{
+    std::string line;
+    std::fstream file;
+    file.open(INDEX_FILE, std::ios_base::out | std::ios_base::in);
+    for (size_t i = 1; i < nodeNumber; i++)
+    {
+        getline(file, line);                            // header
+        getline(file, line);                            // first child node
+        for (unsigned int j = 0; j < nodeSize * 2; j++) // n child nodes and n records
+            getline(file, line);
+    }
+    FormatAndWriteNumber(node.parentNodeNum, file, INT64_MAX_LENGTH);
+    file << " ";
+    FormatAndWriteNumber(node.usedIndexes, file, INT32_MAX_LENGTH);
+    file << std::endl;
+    FormatAndWriteNumber(node.childrenNodesNumbers[0], file, INT64_MAX_LENGTH);
+    file << std::endl;
+    for (size_t i = 0; i < nodeSize; i++)
+    {
+        FormatAndWriteNumber(node.indexes[i].index, file, INT64_MAX_LENGTH);
+        file << " ";
+        FormatAndWriteNumber(node.indexes[i].pageNumber, file, INT64_MAX_LENGTH);
+        file << std::endl;
+        FormatAndWriteNumber(node.childrenNodesNumbers[i + 1], file, INT64_MAX_LENGTH);
+        file << std::endl;
+    }
+    file.close();
+}
+
+void FileManager::UpdateDataPage(size_t pageNum, RecordData &newRecord) {
+    // same as with update page (remember about fixed size)
+}
+void FileManager::InsertNewRecord(RecordData &newRecord) {} // insert at the first empty page
 std::vector<RecordData> FileManager::GetDataPage(size_t pageNum)
 {
     std::string line;
@@ -101,3 +132,19 @@ std::vector<RecordData> FileManager::GetDataPage(size_t pageNum)
 }
 
 void FileManager::CreateNewNode(Node &node) {}
+void FileManager::CreateNewDataPage(RecordData &newRecord){}
+
+void FileManager::FormatAndWriteNumber(size_t number, std::fstream &file, int length)
+{
+    int counter = 0;
+    size_t tmp = number;
+    while (tmp > 0)
+    {
+        tmp /= 10;
+        counter++;
+    }
+    for (int i = 0; i < length - counter; i++)
+        file << '0';
+    if (counter > 0)
+        file << number;
+}

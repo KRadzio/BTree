@@ -47,18 +47,20 @@ public:
     inline void SetNodeSize(unsigned int nodeSize) { this->nodeSize = nodeSize; }
 
     // Index file operations
-    Node GetNode(size_t nodeNumber); // get node that has a number
-    void InsertNewNode(Node& node); // if any space can be reused then reuse it else create new
-    void UpdateNode(Node& node, size_t nodeNumber); // update node in file
+    Node GetNode(size_t nodeNumber);                // get node that has a number
+    void InsertNewNode(Node &node);                 // if any space can be reused then reuse it else create new
+    void UpdateNode(Node &node, size_t nodeNumber); // update node in file
 
     // Data file operations
     void UpdateDataPage(size_t pageNum, RecordData &newRecord); // for deleting
-    void InsertNewRecord(RecordData& newRecord); // for inserting
-    std::vector<RecordData> GetDataPage(size_t pageNum); // for reading
+    void InsertNewRecord(RecordData &newRecord);                // for inserting
+    std::vector<RecordData> GetDataPage(size_t pageNum);        // for reading
 
     // helper function
 private:
     void CreateNewNode(Node &node); // use when inserting
+    void CreateNewDataPage(RecordData &newRecord);
+    void FormatAndWriteNumber(size_t number, std::fstream &file, int length); // so that records have fixed number
 
 private:
     FileManager();
@@ -67,6 +69,6 @@ private:
 private:
     unsigned int nodeSize = 0;
     std::vector<size_t> freePages; // for now
-    // swap it to a file or something 
+    // swap it to a file or something
 };
 #endif
