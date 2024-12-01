@@ -4,6 +4,7 @@
 #include <ncurses.h>
 
 #include "FileManager.hpp"
+#include "BTree.hpp"
 
 // Let h >= 0, d >= 1. B-tree with height h and order d is an ordered tree that is either empty (h = 0),
 // or satisfies the following conditions:
@@ -16,12 +17,9 @@
 
 int main()
 {
-    unsigned int n = 0;
-    size_t i = 0;
-    std::cout << i - 1 << " " << n - 1 << std::endl;
-    std::cout << std::stoi("00000000010") << std::endl;
-
-    Node d = FileManager::GetInstance().GetNode(0);
+    BTree::GetInstance();
+    Node d = FileManager::GetInstance().GetNode(2);
     std::cout << d.parentNodeNum << std::endl;
+    std::cout << d.usedIndexes << std::endl;
     return 0;
 }

@@ -1,18 +1,26 @@
 #ifndef FILE_MANAGER_HPP
 #define FILE_MANAGER_HPP
 
+#include <iostream>
 #include <fstream>
+#include <string>
+#include <sstream>
 #include <vector>
 
 #include "Node.hpp"
 
-#define DATA_PAGE_SIZE 10;
+#define DATA_PAGE_SIZE 10 // can be by default or it can be changed if we want to?
+#define DELIMITER ' '
+#define INDEX_FILE "./files/indexfile.txt"
+#define DATA_FILE "./files/data.txt"
+#define INT32_MAX_LENGTH 10 // max int32 length in digits
+#define INT64_MAX_LENGTH 20 // max int64 length in digit
 // data is stored in pages
 // pages have their number
 // key -> value of each of the elements
 // if empty then use some special value (0 / NULL or something)
 // index file contains pages of BTree (nodes)
-// pointers to child pages
+// pointers to child nodes
 // keys and page number in data file
 // maybe a page num in index file
 
@@ -23,30 +31,34 @@
 // the higher the d the longer the page will be
 
 // Data file page structure
-// header (is full)
+// header (number of indexes in page)
 // key value
 // page size ~ 100 records may be good
 
-// UpdatePage - Load the data page to memory , update record then save back to disk
+// pages are indexed from 1
 
 class FileManager
 {
 public:
     static FileManager &GetInstance();
-    void ClearBothFile();
+
+    // settings
+    void ClearBothFiles(); // clear index file and data file
     inline void SetNodeSize(unsigned int nodeSize) { this->nodeSize = nodeSize; }
 
-    Node GetNode(size_t nodeNumber);
-    // get data page
+    // Index file operations
+    Node GetNode(size_t nodeNumber); // get node that has a number
+    void InsertNewNode(Node& node); // if any space can be reused then reuse it else create new
+    void UpdateNode(Node& node, size_t nodeNumber); // update node in file
 
+    // Data file operations
+    void UpdateDataPage(size_t pageNum, RecordData &newRecord); // for deleting
+    void InsertNewRecord(RecordData& newRecord); // for inserting
+    std::vector<RecordData> GetDataPage(size_t pageNum); // for reading
 
-    // return page number
-    void UpdateDataPage(size_t pageNum, RecordData &newRecord);
-
-    // update index page
-    // crate index page (when there is no empty page)
-    // create new data page (new recprd can be inserted to page than still have free space)
-
+    // helper function
+private:
+    void CreateNewNode(Node &node); // use when inserting
 
 private:
     FileManager();
@@ -54,7 +66,7 @@ private:
 
 private:
     unsigned int nodeSize = 0;
-    // maybe something to store free pages?
-    // it may be a file
+    std::vector<size_t> freePages; // for now
+    // swap it to a file or something 
 };
 #endif

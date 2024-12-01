@@ -8,7 +8,7 @@
 struct Node
 {
     size_t parentNodeNum = 0;
-    unsigned int usedIndexes = 0;
+    int usedIndexes = 0;
     std::vector<size_t> childrenNodesNumbers;
     std::vector<RecordIndex> indexes;
 };

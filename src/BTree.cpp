@@ -16,5 +16,5 @@ void BTree::SetOrder(unsigned int order)
     FileManager::GetInstance().SetNodeSize(order * 2);
     height = 0;
     rootNodeNum = 0;
-    FileManager::GetInstance().ClearBothFile();
+    FileManager::GetInstance().ClearBothFiles();
 }
