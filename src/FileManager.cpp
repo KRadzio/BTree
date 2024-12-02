@@ -63,19 +63,26 @@ Node FileManager::GetNode(size_t nodeNumber)
     return n;
 }
 
-void FileManager::InsertNewNode(Node &node)
+size_t FileManager::InsertNewNode(Node &node)
 {
+    // change this one
+    // maybe remove the queue and search like in inserting new records?
     if (!freePages.empty())
     {
-        UpdateNode(node, freePages[freePagesIndex]);
+        size_t nodeNuber = freePages.back();
+        UpdateNode(node, nodeNuber);
+        freePages.pop();
         freePagesIndex++;
+        return nodeNuber;
     }
     else
         CreateNewNode(node);
+    return 0; // we need to return the node number
 } // check if there are empty then either update the empty one or create new one
 
 void FileManager::UpdateNode(Node &node, size_t nodeNumber)
 {
+    // remember to push elements to queue
     std::string line;
     std::fstream file;
     file.open(INDEX_FILE, std::ios_base::out | std::ios_base::in);
@@ -90,20 +97,26 @@ void FileManager::UpdateNode(Node &node, size_t nodeNumber)
     file.close();
 }
 
-void FileManager::DeleteRecord(size_t pageNum, RecordData &record)
-{
-}
-
-void FileManager::UpdateDataPage(size_t pageNum, RecordData &newRecord)
-{
-    // same as with update page (remember about fixed size)
-}
-
-void FileManager::InsertNewRecord(RecordData &newRecord)
+void FileManager::UpdateDataPage(size_t pageNum, DataPage &dataPage)
 {
     std::string line;
     std::fstream file;
-    file.open(DATA_FILE);
+    file.open(DATA_FILE, std::ios_base::out | std::ios_base::in);
+    for (size_t i = 1; i < pageNum; i++)
+    {
+        getline(file, line); // header
+        for (int j = 0; j < DATA_PAGE_SIZE; j++)
+            getline(file, line);
+    }
+    WriteDataPage(dataPage, file);
+    file.close();
+}
+
+size_t FileManager::InsertNewRecord(RecordData &newRecord)
+{
+    std::string line;
+    std::fstream file;
+    file.open(DATA_FILE, std::ios_base::out | std::ios_base::in);
     size_t pageNumber = 1;
     while (!file.eof())
     {
@@ -118,18 +131,41 @@ void FileManager::InsertNewRecord(RecordData &newRecord)
     {
         CreateNewDataPage(newRecord);
         file.close();
-        return;
+        return pageNumber;
     }
-    else
-        UpdateDataPage(pageNumber, newRecord);
+    DataPage dp;
+    dp.filledRecords = std::stoi(line) + 1;
+    dp.records = std::vector<RecordData>(DATA_PAGE_SIZE);
+    bool found = false;
+    for (size_t i = 0; i < DATA_PAGE_SIZE; i++)
+    {
+        RecordData rd;
+        getline(file, line);
+        std::stringstream ss(line);
+        getline(ss, line, DELIMITER);
+        rd.index = std::stoul(line);
+        getline(ss, line);
+        rd.value = line;
+        dp.records[i] = rd;
+        if (!found && dp.records[i].index == INVALID_INDEX)
+        {
+            dp.records[i] = newRecord;
+            found = true;
+        } // we still have to load the entire page
+    }
     file.close();
+    // one read to find empty place
+    // then one save to write it
+    UpdateDataPage(pageNumber, dp);
+    return pageNumber;
 } // insert at the first empty page
 
-std::vector<RecordData> FileManager::GetDataPage(size_t pageNum)
+DataPage FileManager::GetDataPage(size_t pageNum)
 {
     std::string line;
     std::ifstream file;
-    std::vector<RecordData> v = std::vector<RecordData>(DATA_PAGE_SIZE);
+    DataPage dp;
+    dp.records = std::vector<RecordData>(DATA_PAGE_SIZE);
     file.open(DATA_FILE);
     for (size_t i = 1; i < pageNum; i++)
     {
@@ -140,22 +176,23 @@ std::vector<RecordData> FileManager::GetDataPage(size_t pageNum)
     if (file.eof())
     {
         std::cout << "Page out of bounds" << std::endl;
-        return v;
+        return dp;
     }
-    getline(file, line); // skip header
-    for (size_t i = 0; i < v.size(); i++)
+    getline(file, line); // header
+    dp.filledRecords = std::stoi(line);
+    for (size_t i = 0; i < dp.records.size(); i++)
     {
         RecordData rd;
         getline(file, line);
         std::stringstream ss(line);
         getline(ss, line, DELIMITER);
         rd.index = std::stoul(line);
-        getline(ss, line);
+        getline(ss, line, UNUSEDBYTE);
         rd.value = line;
-        v[i] = rd;
+        dp.records[i] = rd;
     }
     file.close();
-    return v;
+    return dp;
 }
 
 void FileManager::CreateNewNode(Node &node)
@@ -172,15 +209,15 @@ void FileManager::CreateNewDataPage(RecordData &newRecord)
     file.open(DATA_FILE, std::ios_base::out | std::ios_base::app);
     FormatAndWriteNumber(1, file, INT32_MAX_LENGTH);
     file << std::endl;
-    FormatAndWriteNumber(newRecord.index,file,INT64_MAX_LENGTH);
+    FormatAndWriteNumber(newRecord.index, file, INT64_MAX_LENGTH);
     file << " ";
-    FormatValue(newRecord.value,file);
+    FormatValue(newRecord.value, file);
     file << std::endl;
-    for(int i=0; i< DATA_PAGE_SIZE - 1; i++)
+    for (int i = 0; i < DATA_PAGE_SIZE - 1; i++)
     {
-        FormatAndWriteNumber(0, file,INT64_MAX_LENGTH);
+        FormatAndWriteNumber(0, file, INT64_MAX_LENGTH);
         file << " ";
-        FormatValue(EMPTY_RECORD,file);
+        FormatValue(EMPTY_RECORD, file);
         file << std::endl;
     }
     file.close();
@@ -205,6 +242,19 @@ void FileManager::WriteNode(Node &node, std::fstream &file)
     }
 }
 
+void FileManager::WriteDataPage(DataPage &dp, std::fstream &file)
+{
+    FormatAndWriteNumber(dp.filledRecords, file, INT32_MAX_LENGTH);
+    file << std::endl;
+    for (size_t i = 0; i < DATA_PAGE_SIZE; i++)
+    {
+        FormatAndWriteNumber(dp.records[i].index, file, INT64_MAX_LENGTH);
+        file << " ";
+        FormatValue(dp.records[i].value, file);
+        file << std::endl;
+    }
+}
+
 void FileManager::FormatAndWriteNumber(size_t number, std::fstream &file, int length)
 {
     int counter = 0;
@@ -220,11 +270,11 @@ void FileManager::FormatAndWriteNumber(size_t number, std::fstream &file, int le
         file << number;
 }
 
-void FileManager::FormatValue(std::string value, std::fstream& file)
+void FileManager::FormatValue(std::string value, std::fstream &file)
 {
     size_t len = VALUE_MAX_LENGTH - value.size();
-    if(value.size() > 0)
+    if (value.size() > 0)
         file << value;
-    for(size_t i=0; i<len; i++)
+    for (size_t i = 0; i < len; i++)
         file << UNUSEDBYTE;
 }

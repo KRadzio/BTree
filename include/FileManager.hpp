@@ -6,8 +6,10 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <queue>
 
 #include "Node.hpp"
+#include "DataPage.hpp"
 
 #define DATA_PAGE_SIZE 10 // can be by default or it can be changed if we want to?
 #define DELIMITER ' '
@@ -50,22 +52,25 @@ public:
 
     // Index file operations
     Node GetNode(size_t nodeNumber);                // get node that has a number
-    void InsertNewNode(Node &node);                 // if any space can be reused then reuse it else create new
+    size_t InsertNewNode(Node &node);               // if any space can be reused then reuse it else create new
     void UpdateNode(Node &node, size_t nodeNumber); // update node in file
 
     // Data file operations
-    void DeleteRecord(size_t pageNum, RecordData &record);
-    void UpdateDataPage(size_t pageNum, RecordData &newRecord); // for deleting
-    void InsertNewRecord(RecordData &newRecord);                // for inserting
-    std::vector<RecordData> GetDataPage(size_t pageNum);        // for reading
+    // change to page
+    void UpdateDataPage(size_t pageNum, DataPage &dataPage); // for deleting
+    size_t InsertNewRecord(RecordData &newRecord);           // for inserting
+    // change to dataPage
+    DataPage GetDataPage(size_t pageNum); // for reading
 
     // helper function
-public:
+private:
     void CreateNewNode(Node &node); // use when inserting
     void CreateNewDataPage(RecordData &newRecord);
     void WriteNode(Node &node, std::fstream &file);
+    void WriteDataPage(DataPage &dp, std::fstream &file);
+    // get/read Node/DataPage as helper functions maybe?
     void FormatAndWriteNumber(size_t number, std::fstream &file, int length); // so that records have fixed number
-    void FormatValue(std::string value, std::fstream& file);
+    void FormatValue(std::string value, std::fstream &file);
 
 private:
     FileManager();
@@ -73,7 +78,7 @@ private:
 
 private:
     unsigned int nodeSize = 0;
-    std::vector<size_t> freePages; // for now
+    std::queue<size_t> freePages; // for now
     size_t freePagesIndex = 0;
     // swap it to a file or something
 };

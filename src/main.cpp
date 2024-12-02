@@ -22,15 +22,16 @@ int main()
     Node d = FileManager::GetInstance().GetNode(2);
     std::cout << d.parentNodeNum << std::endl;
     std::cout << d.usedIndexes << std::endl;
-    d.usedIndexes = 204;
-    d.parentNodeNum = 550;
-    d.childrenNodesNumbers[0] = 67;
-    d.indexes[0].index = 4289;
+    d.usedIndexes = 598;
+    d.parentNodeNum = 1020;
+    d.childrenNodesNumbers[0] = 89;
+    d.indexes[0].index = 5610;
     d.indexes[0].pageNumber = 84321;
-    // FileManager::GetInstance().UpdateNode(d,3);
+    DataPage dp = FileManager::GetInstance().GetDataPage(1); 
+    // FileManager::GetInstance().UpdateDataPage(2,dp);
     RecordData rd;
     rd.index = 42;
     rd.value = "abcd";
-    //FileManager::GetInstance().CreateNewDataPage(rd);
+    FileManager::GetInstance().InsertNewRecord(rd);
     return 0;
 }
