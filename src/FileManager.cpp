@@ -217,7 +217,7 @@ DataPage FileManager::GetDataPage(size_t pageNum)
     }
     if (file.eof())
     {
-        std::cout << "Page out of bounds" << std::endl;
+        file.close();
         return dp;
     }
     getline(file, line); // header

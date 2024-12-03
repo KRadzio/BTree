@@ -53,17 +53,23 @@ public:
     void ResetReadsAndWrites();
     void SetNodeSize(unsigned int nodeSize); // the entire tree will be reset !
 
+    // getting stats
+    inline size_t GetDataReads() { return dataReads; }
+    inline size_t GetDataWrites() { return dataWrites; }
+    inline size_t GetIndexReads() { return indexReads; }
+    inline size_t GetIndexWrites() { return indexWrites; }
+
     // Index file operations
-    Node GetNode(size_t nodeNumber);                // get node that has a number
+    Node GetNode(size_t nodeNumber); // get node that has a number
     // if any space can be reused then reuse it else create new
     // REMEMBER TO FILL THE NODE CORRECTLY
-    size_t InsertNewNode(Node &node);               
+    size_t InsertNewNode(Node &node);
     void UpdateNode(Node &node, size_t nodeNumber); // update node in file
 
     // Data file operations
     void UpdateDataPage(size_t pageNum, DataPage &dataPage); // for deleting
     size_t InsertNewRecord(RecordData &newRecord);           // for inserting
-    DataPage GetDataPage(size_t pageNum); // for reading
+    DataPage GetDataPage(size_t pageNum);                    // for reading
 
     // helper function
 private:
