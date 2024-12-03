@@ -1,37 +1,39 @@
 #include "Cache.hpp"
 
 Cache::Cache() {}
-Cache::~Cache() { cachedNodes.clear(); }
+Cache::~Cache() {}
 
 Cache &Cache::GetInstance()
 {
     static Cache *instance = new Cache;
     return *instance;
 }
+
 void Cache::SetSize(unsigned int size)
 {
     this->size = size;
     auto tmp = cachedNodes;
-    cachedNodes = std::vector<Node>(size);
-    for (size_t i = 0; i < tmp.size(); i++)
-        cachedNodes[i] = tmp[i];
+    while (!cachedNodes.empty())
+        tmp.pop();
 }
-void Cache::InsertNewNode(Node &node)
+
+void Cache::Push(Node &node)
 {
-    if (index < size)
-    {
-        cachedNodes[index] = node;
-        index++;
-    }
+    if (cachedNodes.size() < size)
+        cachedNodes.push(node);
     else
         std::cout << "Cache is full" << std::endl;
 }
-Node &Cache::GetNode(unsigned int n)
+
+Node Cache::Pop()
 {
-    return cachedNodes[n];
+    Node tmp = cachedNodes.top();
+    cachedNodes.pop();
+    return tmp;
 }
 
 void Cache::ClearCache()
 {
-    index = 0; // we reset the cache index
+    while (!cachedNodes.empty())
+        cachedNodes.pop();
 }

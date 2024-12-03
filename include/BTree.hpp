@@ -4,7 +4,7 @@
 #include "FileManager.hpp"
 #include "Cache.hpp"
 
-#define BTREE_ORDER 2;
+#define DEFAULT_BTREE_ORDER 2;
 
 // nodes may not be needed as separate class
 // they are stored in text file
@@ -16,6 +16,7 @@ class BTree
 {
 public:
     static BTree &GetInstance();
+    void Init(unsigned int order);
     void SetOrder(unsigned int order); // changes the order of the tree and resets the tree
 
     void Search();
@@ -35,7 +36,7 @@ private:
 private:
     size_t rootNodeNum = 0;
     unsigned int height = 0; // by default
-    unsigned int order = BTREE_ORDER;         // by default
+    unsigned int order = DEFAULT_BTREE_ORDER;         // by default
 };
 
 #endif

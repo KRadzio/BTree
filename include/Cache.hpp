@@ -2,7 +2,7 @@
 #define CACHE_HPP
 
 #include <iostream>
-#include <vector>
+#include <stack>
 
 #include "Node.hpp"
 
@@ -11,9 +11,9 @@ class Cache
 
 public:
     static Cache &GetInstance();
-    void SetSize(unsigned int size);
-    void InsertNewNode(Node& node);
-    Node& GetNode(unsigned int n);
+    void SetSize(unsigned int size); // changes size and resets cache
+    void Push(Node& node);
+    Node Pop();
     void ClearCache();
 
 private:
@@ -21,9 +21,8 @@ private:
     ~Cache();
 
 private:
-    unsigned int index = 0;
     unsigned int size = 1;
-    std::vector<Node> cachedNodes;
+    std::stack<Node> cachedNodes;
 };
 
 #endif

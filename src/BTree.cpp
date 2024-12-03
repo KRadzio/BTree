@@ -1,12 +1,18 @@
 #include "BTree.hpp"
 
-BTree::BTree() { FileManager::GetInstance().SetNodeSize(order * 2); }
+BTree::BTree() {}
 BTree::~BTree() {}
 
 BTree &BTree::GetInstance()
 {
     static BTree *instance = new BTree;
     return *instance;
+}
+
+void BTree::Init(unsigned int order)
+{
+    this->order = order;
+    FileManager::GetInstance().SetNodeSize(order * 2);
 }
 
 void BTree::SetOrder(unsigned int order)

@@ -17,20 +17,20 @@
 
 int main()
 {
-    BTree::GetInstance();
-    // d not initialized
-    Node d = FileManager::GetInstance().GetNode(2);
-    d.usedIndexes = 598;
-    d.parentNodeNum = 1020;
-    d.childrenNodesNumbers[0] = 89;
-    d.indexes[0].index = 5610;
-    d.indexes[0].pageNumber = 84321;
-    DataPage dp = FileManager::GetInstance().GetDataPage(1); 
-    // FileManager::GetInstance().UpdateDataPage(2,dp);
-    RecordData rd;
-    rd.index = 42;
-    rd.value = "abcd";
-    FileManager::GetInstance().InsertNewRecord(rd);
-    // FileManager::GetInstance().InsertNewNode(d);
+    BTree::GetInstance().Init(2);
+    // Node d = FileManager::GetInstance().GetNode(10);
+    // d.usedIndexes = 7667;
+    // d.parentNodeNum = 1020;
+    // d.childrenNodesNumbers[0] = 89;
+    // d.indexes[0].index = 5610;
+    // d.indexes[0].pageNumber = 84321;
+    // // FileManager::GetInstance().InsertNewNode(d);
+    // DataPage dp = FileManager::GetInstance().GetDataPage(1); 
+    // // FileManager::GetInstance().UpdateDataPage(2,dp);
+    // RecordData rd;
+    // rd.index = 42;
+    // rd.value = "abcd";
+    // FileManager::GetInstance().InsertNewRecord(rd);
+    // // FileManager::GetInstance().InsertNewNode(d);
     return 0;
 }

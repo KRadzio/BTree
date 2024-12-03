@@ -6,7 +6,6 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include <queue>
 
 #include "Node.hpp"
 #include "DataPage.hpp"
@@ -51,7 +50,9 @@ public:
     // settings
     void ClearBothFiles(); // clear index file and data file
     void ResetReadsAndWrites();
-    void SetNodeSize(unsigned int nodeSize); // the entire tree will be reset !
+    // we need to know the node size to read the index file
+    // after calling it the tree will be basicly reseted
+    void SetNodeSize(unsigned int nodeSize); 
 
     // getting stats
     inline size_t GetDataReads() { return dataReads; }
@@ -85,7 +86,7 @@ private:
     ~FileManager();
 
 private:
-    unsigned int nodeSize = 0;
+    unsigned int nodeSize = 0; // it is zero by default we have to set it
     size_t dataWrites = 0;
     size_t dataReads = 0;
     size_t indexWrites = 0;
