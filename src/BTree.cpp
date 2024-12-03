@@ -13,7 +13,7 @@ void BTree::Init(unsigned int order)
 {
     this->order = order;
     FileManager::GetInstance().SetNodeSize(order * 2);
-    Cache::GetInstance().SetSize(height +1);
+    Cache::GetInstance().SetSize(height + 1);
 }
 
 void BTree::SetOrder(unsigned int order)
@@ -38,18 +38,13 @@ bool BTree::Search(size_t key, bool clearCache)
         Cache::GetInstance().ClearCache();
     return found;
 }
-void BTree::Add(RecordData rd) {
+void BTree::Add(RecordData rd)
+{
     // invalid input will not be alowed
-    if(rd.index == INVALID_INDEX || rd.value == EMPTY_RECORD || rd.value.length() > VALUE_MAX_LENGTH)
-    {
-        std::cout << "Invalid input \n";
+    if (rd.index == INVALID_INDEX || rd.value == EMPTY_RECORD || rd.value.length() > VALUE_MAX_LENGTH)
         return;
-    }
-    if(Search(rd.index,false))
-    {
-        std::cout << "Already there \n";
+    if (Search(rd.index, false))
         Cache::GetInstance().ClearCache();
-    }
     else
     {
         Cache::GetInstance().ClearCache();
@@ -72,7 +67,6 @@ bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
         if (currNode.indexes[i].index == key)
             return true;
         if (currNode.indexes[i].index < key && currNode.indexes[i + 1].index > key) //  x< key < x+1
-
             return SearchRecursive(currNode.childrenNodesNumbers[i + 1], key);
     }
     if (key == currNode.indexes[currNode.indexes.size() - 1].index) // the biggest one is equal
