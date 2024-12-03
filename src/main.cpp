@@ -32,6 +32,7 @@ int main()
     RecordData rd;
     rd.index = 42;
     rd.value = "abcd";
-    FileManager::GetInstance().InsertNewRecord(rd);
+    // FileManager::GetInstance().InsertNewRecord(rd);
+    FileManager::GetInstance().InsertNewNode(d);
     return 0;
 }

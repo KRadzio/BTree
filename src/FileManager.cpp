@@ -65,19 +65,35 @@ Node FileManager::GetNode(size_t nodeNumber)
 
 size_t FileManager::InsertNewNode(Node &node)
 {
-    // change this one
-    // maybe remove the queue and search like in inserting new records?
-    if (!freePages.empty())
+    std::string line;
+    std::fstream file;
+    file.open(INDEX_FILE, std::ios_base::out | std::ios_base::in);
+    size_t nodeNumber = 1;
+    while (!file.eof())
     {
-        size_t nodeNuber = freePages.back();
-        UpdateNode(node, nodeNuber);
-        freePages.pop();
-        freePagesIndex++;
-        return nodeNuber;
+        // break loop faster
+        getline(file, line); // header
+        if(file.eof())
+            break;
+        std::stringstream ss(line);
+        getline(ss, line, DELIMITER); // parent number
+        getline(ss, line); // used indexed
+        if (std::stoi(line) == EMPTY_NODE)
+            break;
+        getline(file, line);                            // first child node
+        for (unsigned int j = 0; j < nodeSize * 2; j++) // n child nodes and n records
+            getline(file, line);
+        nodeNumber++;
     }
-    else
+    if (file.eof())
+    {
+        file.close();
         CreateNewNode(node);
-    return 0; // we need to return the node number
+        return nodeNumber;
+    }
+    file.close();
+    UpdateNode(node,nodeNumber);
+    return nodeNumber; // we need to return the node number
 } // check if there are empty then either update the empty one or create new one
 
 void FileManager::UpdateNode(Node &node, size_t nodeNumber)

@@ -19,6 +19,7 @@
 #define DATA_FILE "./files/data.txt"
 #define INT32_MAX_LENGTH 10 // max int32 length in digits
 #define INT64_MAX_LENGTH 20 // max int64 length in digit
+#define EMPTY_NODE 0
 // data is stored in pages
 // pages have their number
 // key -> value of each of the elements
@@ -78,8 +79,5 @@ private:
 
 private:
     unsigned int nodeSize = 0;
-    std::queue<size_t> freePages; // for now
-    size_t freePagesIndex = 0;
-    // swap it to a file or something
 };
 #endif
