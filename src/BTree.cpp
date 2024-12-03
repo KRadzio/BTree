@@ -13,6 +13,7 @@ void BTree::Init(unsigned int order)
 {
     this->order = order;
     FileManager::GetInstance().SetNodeSize(order * 2);
+    Cache::GetInstance().SetSize(height +1);
 }
 
 void BTree::SetOrder(unsigned int order)
@@ -25,62 +26,61 @@ void BTree::SetOrder(unsigned int order)
     FileManager::GetInstance().ClearBothFiles();
 }
 
-void BTree::Search(size_t key)
+bool BTree::Search(size_t key, bool clearCache)
 {
-    // maybe clear cache by default after search
-    // also this needs to return something
-    if (rootNodeNum == NO_ROOT)
-    {
-        std::cout << "The BTree is empty \n";
-        return;
-    }
-    if (key == INVALID_INDEX)
-    {
-        std::cout << "Not found, invalid index \n";
-        return;
-    }
+    if (rootNodeNum == NO_ROOT) // BTree is empty
+        return false;
+    if (key == INVALID_INDEX) // invalid input
+        return false;
     size_t currNodeNum = rootNodeNum;
-    SearchRecursive(currNodeNum, key);
-    return;
+    bool found = SearchRecursive(currNodeNum, key);
+    if (clearCache) // in insert we do not want this
+        Cache::GetInstance().ClearCache();
+    return found;
 }
-void BTree::Add(RecordData rd) {}
+void BTree::Add(RecordData rd) {
+    // invalid input will not be alowed
+    if(rd.index == INVALID_INDEX || rd.value == EMPTY_RECORD || rd.value.length() > VALUE_MAX_LENGTH)
+    {
+        std::cout << "Invalid input \n";
+        return;
+    }
+    if(Search(rd.index,false))
+    {
+        std::cout << "Already there \n";
+        Cache::GetInstance().ClearCache();
+    }
+    else
+    {
+        Cache::GetInstance().ClearCache();
+        // use the cache to not read the pages twice
+    }
+}
 void BTree::Delete(RecordIndex ri) {}
 void BTree::Diplay() {}
 
-void BTree::SearchRecursive(size_t currNodeNum, size_t key)
+bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
 {
-    if (currNodeNum == INVALID_NODE)
-    {
-        std::cout << "Not found " << key << " page empty\n";
-        return;
-    }
+    if (currNodeNum == INVALID_NODE) // end of tree (leafs do not have children)
+        return false;
     Node currNode = FileManager::GetInstance().GetNode(currNodeNum);
+    Cache::GetInstance().Push(currNode);
     if (key < currNode.indexes[0].index) // smaller than first
-    {
-        SearchRecursive(currNode.childrenNodesNumbers[0], key);
-        return;
-    }
+        return SearchRecursive(currNode.childrenNodesNumbers[0], key);
     for (size_t i = 0; i < currNode.indexes.size() - 1; i++)
     {
         if (currNode.indexes[i].index == key)
-        {
-            std::cout << "Found: " << key << std::endl;
-            return;
-        }
+            return true;
         if (currNode.indexes[i].index < key && currNode.indexes[i + 1].index > key) //  x< key < x+1
-        {
-            SearchRecursive(currNode.childrenNodesNumbers[i + 1], key);
-            return;
-        }
+
+            return SearchRecursive(currNode.childrenNodesNumbers[i + 1], key);
     }
     if (key == currNode.indexes[currNode.indexes.size() - 1].index) // the biggest one is equal
-    {
-        std::cout << "Found: " << key << std::endl;
-        return;
-    }
+        return true;
     if (key > currNode.indexes[currNode.indexes.size() - 1].index) // larger than biggest
-    {
-        SearchRecursive(currNode.childrenNodesNumbers[currNode.childrenNodesNumbers.size() - 1], key);
-        return;
-    }
+        return SearchRecursive(currNode.childrenNodesNumbers[currNode.childrenNodesNumbers.size() - 1], key);
+    // we can remove the last if since all other condicions are already checked
+    // but for now the return at the end can stay
+    // to remove warning, the key will fall to one of the categories above
+    return false;
 }

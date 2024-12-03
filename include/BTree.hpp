@@ -21,7 +21,7 @@ public:
     void Init(unsigned int order);
     void SetOrder(unsigned int order); // changes the order of the tree and resets the tree
 
-    void Search(size_t key);
+    bool Search(size_t key, bool clearCache = true);
     void Add(RecordData rd);
     void Delete(RecordIndex ri);
     void Diplay();
@@ -31,7 +31,7 @@ public:
     // display
     // count reads and writes
 private:
-    void SearchRecursive(size_t currNodeNum, size_t key);
+    bool SearchRecursive(size_t currNodeNum, size_t key);
 
 private:
     BTree();
@@ -39,7 +39,7 @@ private:
 
 private:
     size_t rootNodeNum = 1;
-    unsigned int height = 0;                  // by default
+    unsigned int height = 2;                  // by default
     unsigned int order = DEFAULT_BTREE_ORDER; // by default
 };
 

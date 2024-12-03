@@ -18,6 +18,16 @@
 int main()
 {
     BTree::GetInstance().Init(2);
+    RecordData rd;
+    rd.index = 0;
+    rd.value = "a";
+    BTree::GetInstance().Add(rd);
+    rd.index = 17;
+    rd.value = EMPTY_RECORD;
+    BTree::GetInstance().Add(rd);
+    rd.value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    BTree::GetInstance().Add(rd);
+
     BTree::GetInstance().Search(0);
     BTree::GetInstance().Search(10);
     BTree::GetInstance().Search(20);
