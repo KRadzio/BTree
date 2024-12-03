@@ -20,8 +20,24 @@ void FileManager::ClearBothFiles()
     file.close();
 }
 
+void FileManager::ResetReadsAndWrites()
+{
+    dataReads = 0;
+    dataWrites = 0;
+    indexReads = 0;
+    indexWrites = 0;
+}
+
+void FileManager::SetNodeSize(unsigned int nodeSize)
+{
+    this->nodeSize = nodeSize;
+    ResetReadsAndWrites();
+   // ClearBothFiles(); // later uncomment
+}
+
 Node FileManager::GetNode(size_t nodeNumber)
 {
+    indexReads++;
     std::string line;
     std::ifstream file;
     Node n;
@@ -35,7 +51,11 @@ Node FileManager::GetNode(size_t nodeNumber)
         for (unsigned int j = 0; j < nodeSize * 2; j++) // n child nodes and n records
             getline(file, line);
     }
-
+    if (file.eof())
+    {
+        file.close();
+        return n;
+    }
     getline(file, line); // header
     std::stringstream ss(line);
     getline(ss, line, DELIMITER);
@@ -65,6 +85,7 @@ Node FileManager::GetNode(size_t nodeNumber)
 
 size_t FileManager::InsertNewNode(Node &node)
 {
+    indexReads++;
     std::string line;
     std::fstream file;
     file.open(INDEX_FILE, std::ios_base::out | std::ios_base::in);
@@ -72,11 +93,11 @@ size_t FileManager::InsertNewNode(Node &node)
     while (!file.eof())
     {
         getline(file, line); // header
-        if(file.eof()) // in case we reached the end
+        if (file.eof())      // in case we reached the end
             break;
         std::stringstream ss(line);
         getline(ss, line, DELIMITER); // parent number
-        getline(ss, line); // used indexed
+        getline(ss, line);            // used indexed
         if (std::stoi(line) == EMPTY_NODE)
             break;
         getline(file, line);                            // first child node
@@ -91,12 +112,13 @@ size_t FileManager::InsertNewNode(Node &node)
         return nodeNumber;
     }
     file.close();
-    UpdateNode(node,nodeNumber);
+    UpdateNode(node, nodeNumber);
     return nodeNumber; // we need to return the node number
 } // check if there are empty then either update the empty one or create new one
 
 void FileManager::UpdateNode(Node &node, size_t nodeNumber)
 {
+    indexWrites++;
     // remember to push elements to queue
     std::string line;
     std::fstream file;
@@ -114,6 +136,7 @@ void FileManager::UpdateNode(Node &node, size_t nodeNumber)
 
 void FileManager::UpdateDataPage(size_t pageNum, DataPage &dataPage)
 {
+    dataWrites++;
     std::string line;
     std::fstream file;
     file.open(DATA_FILE, std::ios_base::out | std::ios_base::in);
@@ -129,6 +152,7 @@ void FileManager::UpdateDataPage(size_t pageNum, DataPage &dataPage)
 
 size_t FileManager::InsertNewRecord(RecordData &newRecord)
 {
+    dataReads++;
     std::string line;
     std::fstream file;
     file.open(DATA_FILE, std::ios_base::out | std::ios_base::in);
@@ -136,7 +160,7 @@ size_t FileManager::InsertNewRecord(RecordData &newRecord)
     while (!file.eof())
     {
         getline(file, line); // header
-        if(file.eof()) // in case we reached the end of file
+        if (file.eof())      // in case we reached the end of file
             break;
         if (std::stoi(line) < DATA_PAGE_SIZE)
             break;
@@ -179,6 +203,7 @@ size_t FileManager::InsertNewRecord(RecordData &newRecord)
 
 DataPage FileManager::GetDataPage(size_t pageNum)
 {
+    dataReads++;
     std::string line;
     std::ifstream file;
     DataPage dp;
@@ -214,6 +239,7 @@ DataPage FileManager::GetDataPage(size_t pageNum)
 
 void FileManager::CreateNewNode(Node &node)
 {
+    indexWrites++;
     std::fstream file;
     file.open(INDEX_FILE, std::ios_base::app | std::ios_base::out);
     WriteNode(node, file);
@@ -222,6 +248,7 @@ void FileManager::CreateNewNode(Node &node)
 
 void FileManager::CreateNewDataPage(RecordData &newRecord)
 {
+    dataWrites++;
     std::fstream file;
     file.open(DATA_FILE, std::ios_base::out | std::ios_base::app);
     FormatAndWriteNumber(1, file, INT32_MAX_LENGTH);

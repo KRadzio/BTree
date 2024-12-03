@@ -17,11 +17,9 @@
 
 int main()
 {
-    Node newNode;
     BTree::GetInstance();
+    // d not initialized
     Node d = FileManager::GetInstance().GetNode(2);
-    std::cout << d.parentNodeNum << std::endl;
-    std::cout << d.usedIndexes << std::endl;
     d.usedIndexes = 598;
     d.parentNodeNum = 1020;
     d.childrenNodesNumbers[0] = 89;

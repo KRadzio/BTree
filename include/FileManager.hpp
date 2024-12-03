@@ -20,6 +20,7 @@
 #define INT32_MAX_LENGTH 10 // max int32 length in digits
 #define INT64_MAX_LENGTH 20 // max int64 length in digit
 #define EMPTY_NODE 0
+#define NO_PARENT 0
 // data is stored in pages
 // pages have their number
 // key -> value of each of the elements
@@ -49,18 +50,19 @@ public:
 
     // settings
     void ClearBothFiles(); // clear index file and data file
-    inline void SetNodeSize(unsigned int nodeSize) { this->nodeSize = nodeSize; }
+    void ResetReadsAndWrites();
+    void SetNodeSize(unsigned int nodeSize); // the entire tree will be reset !
 
     // Index file operations
     Node GetNode(size_t nodeNumber);                // get node that has a number
-    size_t InsertNewNode(Node &node);               // if any space can be reused then reuse it else create new
+    // if any space can be reused then reuse it else create new
+    // REMEMBER TO FILL THE NODE CORRECTLY
+    size_t InsertNewNode(Node &node);               
     void UpdateNode(Node &node, size_t nodeNumber); // update node in file
 
     // Data file operations
-    // change to page
     void UpdateDataPage(size_t pageNum, DataPage &dataPage); // for deleting
     size_t InsertNewRecord(RecordData &newRecord);           // for inserting
-    // change to dataPage
     DataPage GetDataPage(size_t pageNum); // for reading
 
     // helper function
@@ -69,7 +71,6 @@ private:
     void CreateNewDataPage(RecordData &newRecord);
     void WriteNode(Node &node, std::fstream &file);
     void WriteDataPage(DataPage &dp, std::fstream &file);
-    // get/read Node/DataPage as helper functions maybe?
     void FormatAndWriteNumber(size_t number, std::fstream &file, int length); // so that records have fixed number
     void FormatValue(std::string value, std::fstream &file);
 
@@ -79,5 +80,9 @@ private:
 
 private:
     unsigned int nodeSize = 0;
+    size_t dataWrites = 0;
+    size_t dataReads = 0;
+    size_t indexWrites = 0;
+    size_t indexReads = 0;
 };
 #endif
