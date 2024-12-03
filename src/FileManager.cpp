@@ -71,9 +71,8 @@ size_t FileManager::InsertNewNode(Node &node)
     size_t nodeNumber = 1;
     while (!file.eof())
     {
-        // break loop faster
         getline(file, line); // header
-        if(file.eof())
+        if(file.eof()) // in case we reached the end
             break;
         std::stringstream ss(line);
         getline(ss, line, DELIMITER); // parent number
@@ -137,6 +136,8 @@ size_t FileManager::InsertNewRecord(RecordData &newRecord)
     while (!file.eof())
     {
         getline(file, line); // header
+        if(file.eof()) // in case we reached the end of file
+            break;
         if (std::stoi(line) < DATA_PAGE_SIZE)
             break;
         for (int i = 0; i < DATA_PAGE_SIZE; i++)
