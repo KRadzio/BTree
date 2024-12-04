@@ -54,7 +54,10 @@ void BTree::Add(RecordData &rd)
             Cache::GetInstance().ClearCache();
             return;
         }
-        AddRecursive(rd);
+        RecordIndex ri;
+        ri.index = rd.index;
+        ri.pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
+        AddRecursive(ri);
         Cache::GetInstance().ClearCache();
     }
 }
@@ -88,24 +91,29 @@ bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
     return false;
 }
 
-void BTree::AddRecursive(RecordData &rd)
+void BTree::AddRecursive(RecordIndex &ri)
 {
     auto currNodePair = Cache::GetInstance().Pop();
     if (currNodePair.first.usedIndexes < 2 * order)
-        AddToNode(currNodePair.first, currNodePair.second, rd);
+    {
+        AddToNode(currNodePair.first, currNodePair.second, ri);
+        return;
+    }
     // try compensate
-    bool compensationPossible = TryCompensate(currNodePair.first, currNodePair.second, rd);
+    bool compensationPossible = TryCompensate(currNodePair.first, currNodePair.second, ri);
     if (!compensationPossible)
     {
+        if (currNodePair.first.parentNodeNum == NO_PARENT) // in root
+        {
+            SplitRoot(currNodePair.first, ri);
+            return;
+        }
     }
 }
 
-void BTree::AddToNode(Node &node, size_t nodeNumber, RecordData &rd)
+void BTree::AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri)
 {
     node.usedIndexes++; // incremented at the begining
-    RecordIndex ri;
-    ri.index = rd.index;
-    ri.pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
     // the first empty place is indicated by usedIndexes
     for (size_t i = node.usedIndexes - 1; i >= 1; i--)
     {
@@ -144,10 +152,10 @@ void BTree::CreateRootNode(RecordData &rd)
     rootNodeNum = FileManager::GetInstance().InsertNewNode(n);
 }
 
-bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordData &rd)
+bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 {
     // compensate only in leafs for now
-    if (currNode.childrenNodesNumbers[0] != NO_CHILDREN)
+    if (currNode.childrenNodesNumbers[0] == NO_CHILDREN)
         return false;
     auto parentNodePair = Cache::GetInstance().GetLast();
     size_t pos;
@@ -166,7 +174,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordData &rd)
         else
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, pos, rd, RIGHT);
+            Compensate(currNode, pos, ri, RIGHT);
             return true;
         }
     }
@@ -179,7 +187,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordData &rd)
         else
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, pos, rd, LEFT);
+            Compensate(currNode, pos, ri, LEFT);
             return true;
         }
     }
@@ -193,24 +201,21 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordData &rd)
         if (leftSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, pos, rd, LEFT);
+            Compensate(currNode, pos, ri, LEFT);
         }
         if (rightSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, pos, rd, RIGHT);
+            Compensate(currNode, pos, ri, RIGHT);
         }
         return true;
     }
 }
 
-void BTree::Compensate(Node &currNode, size_t pos, RecordData &rd, int direction)
+void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction)
 {
     auto sibling = Cache::GetInstance().Pop();
     auto parent = Cache::GetInstance().GetLast();
-    RecordIndex ri;
-    ri.index = rd.index;
-    ri.pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
 
     std::vector<RecordIndex> indexes = currNode.indexes;
     indexes.push_back(ri);
@@ -228,7 +233,7 @@ void BTree::Compensate(Node &currNode, size_t pos, RecordData &rd, int direction
 
     if (direction == LEFT)
     {
-        if(indexes.size() % 2 == 0)
+        if (indexes.size() % 2 == 0)
             mid--;
         for (size_t i = mid + 1; i < indexes.size(); i++)
             currNode.indexes[i - mid - 1] = indexes[i];
@@ -251,3 +256,56 @@ void BTree::Compensate(Node &currNode, size_t pos, RecordData &rd, int direction
 }
 
 void BTree::Split() {}
+
+void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
+{
+    height++;
+    std::vector<RecordIndex> indexes = currNode.indexes;
+    indexes.push_back(ri);
+    std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
+              { return ri1.index < ri2.index; });
+    size_t mid = indexes.size() / 2;
+
+    // root can have only one record and when it split it will only have one
+    Node leftChild;
+    Node rightChild;
+    InitNode(leftChild, rootNodeNum);
+    InitNode(rightChild, rootNodeNum);
+
+    for (size_t i = 0; i < mid; i++)
+    {
+        leftChild.indexes[i] = indexes[i];
+        leftChild.usedIndexes++;
+    }
+    for (size_t i = mid + 1; i < indexes.size(); i++)
+    {
+        rightChild.indexes[i - mid - 1] = indexes[i];
+        rightChild.usedIndexes++;
+    }
+    // reset root
+    InitNode(currNode, NO_PARENT);
+    currNode.usedIndexes++;
+    currNode.indexes[0] = indexes[mid];
+    currNode.childrenNodesNumbers[0] = FileManager::GetInstance().InsertNewNode(leftChild);
+    currNode.childrenNodesNumbers[1] = FileManager::GetInstance().InsertNewNode(rightChild);
+
+    FileManager::GetInstance().UpdateNode(currNode, rootNodeNum);
+
+    Cache::GetInstance().SetSize(height + 1);
+}
+
+void BTree::InitNode(Node &node, size_t parentNum)
+{
+    node.parentNodeNum = parentNum;
+    node.usedIndexes = 0;
+    node.indexes = std::vector<RecordIndex>(order * 2);
+    node.childrenNodesNumbers = std::vector<size_t>(order * 2 + 1);
+    for (size_t i = 0; i < node.indexes.size(); i++)
+    {
+        node.indexes[i].index = INVALID_INDEX;
+
+        node.indexes[i].pageNumber = INVALID_PAGE;
+    }
+    for (size_t i = 0; i < node.childrenNodesNumbers.size(); i++)
+        node.childrenNodesNumbers[i] = NO_CHILDREN;
+}

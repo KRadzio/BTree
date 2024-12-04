@@ -25,6 +25,12 @@ int main()
     BTree::GetInstance().Add(rd);
     rd.index = 6;
     BTree::GetInstance().Add(rd);
+    rd.index = 32;
+    BTree::GetInstance().Add(rd);
+    rd.index = 10;
+    BTree::GetInstance().Add(rd);
+    rd.index = 15;
+    BTree::GetInstance().Add(rd);
 
     // BTree::GetInstance().Add(rd);
     // rd.index = 0;
