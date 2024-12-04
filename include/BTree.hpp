@@ -1,6 +1,8 @@
 #ifndef BTREE_HPP
 #define BTREE_HPP
 
+#include <algorithm>
+
 #include "FileManager.hpp"
 #include "Cache.hpp"
 
@@ -9,6 +11,8 @@
 #define INVALID_NODE 0
 #define NO_PARENT 0
 #define NO_CHILDREN 0
+#define LEFT 1
+#define RIGHT 2
 
 // nodes may not be needed as separate class
 // they are stored in text file
@@ -34,9 +38,11 @@ public:
     // count reads and writes
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
+    void AddRecursive(RecordData& rd);
     void AddToNode(Node &node, size_t nodeNumber, RecordData &rd);
     void CreateRootNode(RecordData &rd);
-    void Compensate();
+    bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordData& rd);
+    void Compensate(Node& currNode, size_t pos, RecordData& rd, int direction);
     void Split();
 
 private:

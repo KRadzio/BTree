@@ -19,21 +19,11 @@ int main()
 {
     BTree::GetInstance().Init(2);
     RecordData rd;
-    rd.index = 10;
+    rd.index = 46;
     rd.value = "a";
 
     BTree::GetInstance().Add(rd);
-    rd.value = "b";
-    rd.index = 5;
-    BTree::GetInstance().Add(rd);
-    rd.index = 20;
-    BTree::GetInstance().Add(rd);
-
-    rd.index = 30;
-    BTree::GetInstance().Add(rd);
-
-    rd.index = 47;
-
+    rd.index = 6;
     BTree::GetInstance().Add(rd);
 
     // BTree::GetInstance().Add(rd);

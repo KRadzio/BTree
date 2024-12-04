@@ -38,6 +38,7 @@ bool BTree::Search(size_t key, bool clearCache)
         Cache::GetInstance().ClearCache();
     return found;
 }
+
 void BTree::Add(RecordData &rd)
 {
     // invalid input will not be alowed
@@ -53,18 +54,13 @@ void BTree::Add(RecordData &rd)
             Cache::GetInstance().ClearCache();
             return;
         }
-
-        auto currNodePair = Cache::GetInstance().Pop();
-        // node number is needed for saving back to file
-        if (currNodePair.first.usedIndexes < 2 * order)
-            AddToNode(currNodePair.first, currNodePair.second, rd);
-        // try compensate
-        // try split
+        AddRecursive(rd);
         Cache::GetInstance().ClearCache();
-        // use the cache to not read the pages twice
     }
 }
+
 void BTree::Delete(RecordIndex ri) {}
+
 void BTree::Diplay() {}
 
 bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
@@ -90,6 +86,18 @@ bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
     // but for now the return at the end can stay
     // to remove warning, the key will fall to one of the categories above
     return false;
+}
+
+void BTree::AddRecursive(RecordData &rd)
+{
+    auto currNodePair = Cache::GetInstance().Pop();
+    if (currNodePair.first.usedIndexes < 2 * order)
+        AddToNode(currNodePair.first, currNodePair.second, rd);
+    // try compensate
+    bool compensationPossible = TryCompensate(currNodePair.first, currNodePair.second, rd);
+    if (!compensationPossible)
+    {
+    }
 }
 
 void BTree::AddToNode(Node &node, size_t nodeNumber, RecordData &rd)
@@ -136,5 +144,110 @@ void BTree::CreateRootNode(RecordData &rd)
     rootNodeNum = FileManager::GetInstance().InsertNewNode(n);
 }
 
-void BTree::Compensate() {}
+bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordData &rd)
+{
+    // compensate only in leafs for now
+    if (currNode.childrenNodesNumbers[0] != NO_CHILDREN)
+        return false;
+    auto parentNodePair = Cache::GetInstance().GetLast();
+    size_t pos;
+    Node leftSibling;
+    Node rightSibling;
+    for (size_t i = 0; i < parentNodePair.first.childrenNodesNumbers.size(); i++)
+        if (currNodeNumber == parentNodePair.first.childrenNodesNumbers[i])
+            pos = i;
+    // break can be added here
+    // left most
+    if (pos == 0)
+    {
+        rightSibling = FileManager::GetInstance().GetNode(parentNodePair.first.childrenNodesNumbers[pos + 1]);
+        if (rightSibling.usedIndexes == order * 2)
+            return false;
+        else
+        {
+            Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
+            Compensate(currNode, pos, rd, RIGHT);
+            return true;
+        }
+    }
+    // right most
+    if (pos == parentNodePair.first.usedIndexes)
+    {
+        leftSibling = FileManager::GetInstance().GetNode(parentNodePair.first.childrenNodesNumbers[pos - 1]);
+        if (leftSibling.usedIndexes == order * 2)
+            return false;
+        else
+        {
+            Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
+            Compensate(currNode, pos, rd, LEFT);
+            return true;
+        }
+    }
+    // in between
+    leftSibling = FileManager::GetInstance().GetNode(parentNodePair.first.childrenNodesNumbers[pos - 1]);
+    rightSibling = FileManager::GetInstance().GetNode(parentNodePair.first.childrenNodesNumbers[pos + 1]);
+    if (leftSibling.usedIndexes == order * 2 && rightSibling.usedIndexes == order * 2)
+        return false;
+    else
+    {
+        if (leftSibling.usedIndexes < order * 2)
+        {
+            Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
+            Compensate(currNode, pos, rd, LEFT);
+        }
+        if (rightSibling.usedIndexes < order * 2)
+        {
+            Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
+            Compensate(currNode, pos, rd, RIGHT);
+        }
+        return true;
+    }
+}
+
+void BTree::Compensate(Node &currNode, size_t pos, RecordData &rd, int direction)
+{
+    auto sibling = Cache::GetInstance().Pop();
+    auto parent = Cache::GetInstance().GetLast();
+    RecordIndex ri;
+    ri.index = rd.index;
+    ri.pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
+
+    std::vector<RecordIndex> indexes = currNode.indexes;
+    indexes.push_back(ri);
+    if (direction == LEFT)
+        indexes.push_back(parent.first.indexes[pos - 1]);
+    else
+        indexes.push_back(parent.first.indexes[pos]);
+    for (size_t i = 0; i < sibling.first.usedIndexes; i++)
+        indexes.push_back(sibling.first.indexes[i]);
+
+    std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
+              { return ri1.index < ri2.index; });
+
+    size_t mid = indexes.size() / 2;
+
+    if (direction == LEFT)
+    {
+        if(indexes.size() % 2 == 0)
+            mid--;
+        for (size_t i = mid + 1; i < indexes.size(); i++)
+            currNode.indexes[i - mid - 1] = indexes[i];
+        parent.first.indexes[pos - 1] = indexes[mid];
+        for (size_t i = 0; i < mid; i++)
+            sibling.first.indexes[i] = indexes[i];
+    }
+    else
+    {
+        for (size_t i = 0; i < mid; i++)
+            currNode.indexes[i] = indexes[i];
+        parent.first.indexes[pos] = indexes[mid];
+        for (size_t i = mid + 1; i < indexes.size(); i++)
+            sibling.first.indexes[i - mid - 1] = indexes[i];
+    }
+    sibling.first.usedIndexes++;
+    FileManager::GetInstance().UpdateNode(currNode, parent.first.childrenNodesNumbers[pos]);
+    FileManager::GetInstance().UpdateNode(parent.first, parent.second);
+    FileManager::GetInstance().UpdateNode(sibling.first, sibling.second);
+}
+
 void BTree::Split() {}
