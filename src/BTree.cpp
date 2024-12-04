@@ -155,7 +155,7 @@ void BTree::CreateRootNode(RecordData &rd)
 bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 {
     // compensate only in leafs for now
-    if (currNode.childrenNodesNumbers[0] == NO_CHILDREN)
+    if(currNode.parentNodeNum == NO_PARENT) // root 
         return false;
     auto parentNodePair = Cache::GetInstance().GetLast();
     size_t pos;
