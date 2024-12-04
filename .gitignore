@@ -1,3 +1,4 @@
 bin/proj
 .vscode/launch.json
 build.sh
+.vscode/settings.json

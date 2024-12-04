@@ -7,6 +7,8 @@
 #define DEFAULT_BTREE_ORDER 2;
 #define NO_ROOT 0
 #define INVALID_NODE 0
+#define NO_PARENT 0
+#define NO_CHILDREN 0
 
 // nodes may not be needed as separate class
 // they are stored in text file
@@ -22,7 +24,7 @@ public:
     void SetOrder(unsigned int order); // changes the order of the tree and resets the tree
 
     bool Search(size_t key, bool clearCache = true);
-    void Add(RecordData rd);
+    void Add(RecordData &rd);
     void Delete(RecordIndex ri);
     void Diplay();
     // search
@@ -32,6 +34,10 @@ public:
     // count reads and writes
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
+    void AddToNode(Node &node, size_t nodeNumber, RecordData &rd);
+    void CreateRootNode(RecordData &rd);
+    void Compensate();
+    void Split();
 
 private:
     BTree();

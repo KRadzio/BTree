@@ -17,17 +17,17 @@ void Cache::SetSize(unsigned int size)
         tmp.pop();
 }
 
-void Cache::Push(Node &node)
+void Cache::Push(Node &node, size_t nodeNumber)
 {
     if (cachedNodes.size() < size)
-        cachedNodes.push(node);
+        cachedNodes.push(std::make_pair(node, nodeNumber));
     else
         std::cout << "Cache is full" << std::endl;
 }
 
-Node Cache::Pop()
+std::pair<Node, size_t> Cache::Pop()
 {
-    Node tmp = cachedNodes.top();
+    auto tmp = cachedNodes.top();
     cachedNodes.pop();
     return tmp;
 }

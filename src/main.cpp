@@ -21,55 +21,32 @@ int main()
     RecordData rd;
     rd.index = 10;
     rd.value = "a";
+
     BTree::GetInstance().Add(rd);
-    rd.index = 0;
-     BTree::GetInstance().Add(rd);
-    rd.index = 17;
-    rd.value = EMPTY_RECORD;
+    rd.value = "b";
+    rd.index = 5;
     BTree::GetInstance().Add(rd);
-    rd.value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    rd.index = 20;
     BTree::GetInstance().Add(rd);
 
-    BTree::GetInstance().Search(0);
-    BTree::GetInstance().Search(10);
-    BTree::GetInstance().Search(20);
-    BTree::GetInstance().Search(30);
-    BTree::GetInstance().Search(40);
-    BTree::GetInstance().Search(1);
-    BTree::GetInstance().Search(2);
-    BTree::GetInstance().Search(3);
-    BTree::GetInstance().Search(4);
-    BTree::GetInstance().Search(5);
+    rd.index = 30;
+    BTree::GetInstance().Add(rd);
 
-    BTree::GetInstance().Search(7);
+    rd.index = 47;
 
-    BTree::GetInstance().Search(11);
-    BTree::GetInstance().Search(12);
-    BTree::GetInstance().Search(13);
-    BTree::GetInstance().Search(14);
+    BTree::GetInstance().Add(rd);
 
-    BTree::GetInstance().Search(17);
+    // BTree::GetInstance().Add(rd);
+    // rd.index = 0;
+    //  BTree::GetInstance().Add(rd);
+    // rd.index = 17;
+    // rd.value = EMPTY_RECORD;
+    // BTree::GetInstance().Add(rd);
+    // rd.value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    // BTree::GetInstance().Add(rd);
 
-    BTree::GetInstance().Search(22);
-    BTree::GetInstance().Search(23);
-    BTree::GetInstance().Search(24);
-    BTree::GetInstance().Search(25);
-
-    BTree::GetInstance().Search(27);
-
-    BTree::GetInstance().Search(31);
-    BTree::GetInstance().Search(32);
-    BTree::GetInstance().Search(33);
-    BTree::GetInstance().Search(34);
-
-    BTree::GetInstance().Search(37);
-
-    BTree::GetInstance().Search(41);
-    BTree::GetInstance().Search(42);
-    BTree::GetInstance().Search(43);
-    BTree::GetInstance().Search(44);
-
-    BTree::GetInstance().Search(50);
+    // BTree::GetInstance().Search(0);
+    //    std::cout <<  BTree::GetInstance().Search(10) << std::endl;
 
     // Node d = FileManager::GetInstance().GetNode(10);
     // d.usedIndexes = 7667;
