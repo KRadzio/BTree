@@ -43,7 +43,7 @@ private:
     void AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri);
     void CreateRootNode(RecordData &rd);
     bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
-    void Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction);
+    void Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction);
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
     void InitNode(Node &node, size_t parentNum);

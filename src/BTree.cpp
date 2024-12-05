@@ -129,43 +129,30 @@ void BTree::AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri)
         nodePassed = Cache::GetInstance().Pop();
 
     node.usedIndexes++; // incremented at the begining
-    // the first empty place is indicated by usedIndexes
-    if (nodePassedUp) // if not leaf
+                        // the first empty place is indicated by usedIndexes
+
+    for (size_t i = node.usedIndexes - 1; i >= 1; i--)
     {
-        for (size_t i = node.usedIndexes - 1; i >= 1; i--)
+        if (node.indexes[i - 1].index > ri.index)
         {
-            if (node.indexes[i - 1].index > ri.index)
+            node.indexes[i] = node.indexes[i - 1];
+            node.indexes[i - 1] = ri;
+            if (nodePassedUp)
             {
-                node.indexes[i] = node.indexes[i - 1];
-                node.childrenNodesNumbers[i+1] = node.childrenNodesNumbers[i];
-                node.indexes[i - 1] = ri;
+                node.childrenNodesNumbers[i + 1] = node.childrenNodesNumbers[i];
                 node.childrenNodesNumbers[i] = nodePassed.second;
             }
-            else // place found
-            {
-                node.indexes[i] = ri;
-                node.childrenNodesNumbers[i+1] = nodePassed.second;
-                break;
-            }
         }
-        nodePassedUp = false;
-    }
-    else // if leaf
-    {
-        for (size_t i = node.usedIndexes - 1; i >= 1; i--)
+        else // place found
         {
-            if (node.indexes[i - 1].index > ri.index)
-            {
-                node.indexes[i] = node.indexes[i - 1];
-                node.indexes[i - 1] = ri;
-            }
-            else // place found
-            {
-                node.indexes[i] = ri;
-                break;
-            }
+            node.indexes[i] = ri;
+            if (nodePassedUp)
+                node.childrenNodesNumbers[i + 1] = nodePassed.second;
+            break;
         }
     }
+    if (nodePassedUp)
+        nodePassedUp = false;
     FileManager::GetInstance().UpdateNode(node, nodeNumber);
 }
 
@@ -195,7 +182,17 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
     // compensate only in leafs for now
     if (currNode.parentNodeNum == NO_PARENT) // root
         return false;
-    auto parentNodePair = Cache::GetInstance().GetLast();
+
+    std::pair<Node, size_t> parentNodePair;
+    if (nodePassedUp)
+    {
+        auto nodePassed = Cache::GetInstance().Pop();
+        parentNodePair = Cache::GetInstance().GetLast();
+        Cache::GetInstance().Push(nodePassed.first, nodePassed.second); // push it back
+    }
+    else
+        parentNodePair = Cache::GetInstance().GetLast();
+
     size_t pos;
     Node leftSibling;
     Node rightSibling;
@@ -214,7 +211,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         else
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, pos, ri, RIGHT);
+            Compensate(currNode, currNodeNumber, pos, ri, RIGHT);
             return true;
         }
     }
@@ -227,7 +224,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         else
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, pos, ri, LEFT);
+            Compensate(currNode, currNodeNumber, pos, ri, LEFT);
             return true;
         }
     }
@@ -241,21 +238,30 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         if (leftSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, pos, ri, LEFT);
+            Compensate(currNode, currNodeNumber, pos, ri, LEFT);
         }
         if (rightSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, pos, ri, RIGHT);
+            Compensate(currNode, currNodeNumber, pos, ri, RIGHT);
         }
         return true;
     }
 }
 
-void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction)
+void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction)
 {
     auto sibling = Cache::GetInstance().Pop();
-    auto parent = Cache::GetInstance().GetLast();
+
+    std::pair<Node, size_t> parent;
+    std::pair<Node, size_t> nodePassed;
+    if (nodePassedUp)
+    {
+        nodePassed = Cache::GetInstance().Pop();
+        parent = Cache::GetInstance().GetLast();
+    }
+    else
+        parent = Cache::GetInstance().GetLast();
 
     std::vector<RecordIndex> indexes = currNode.indexes;
     indexes.push_back(ri);
@@ -280,6 +286,27 @@ void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int directio
         parent.first.indexes[pos - 1] = indexes[mid];
         for (size_t i = 0; i < mid; i++)
             sibling.first.indexes[i] = indexes[i];
+
+        if (nodePassedUp)
+        {
+            // first move to sibling then move children in currNode
+            sibling.first.childrenNodesNumbers[sibling.first.usedIndexes + 1] = currNode.childrenNodesNumbers[0];
+            auto node = FileManager::GetInstance().GetNode(currNode.childrenNodesNumbers[0]);
+            node.parentNodeNum = sibling.second;
+            FileManager::GetInstance().UpdateNode(node, currNode.childrenNodesNumbers[0]);
+            size_t newNodePos;
+            for (size_t i = 0; i < currNode.indexes.size(); i++)
+                if (currNode.indexes[i].index > nodePassed.first.indexes[0].index)
+                {
+                    newNodePos = i;
+                    break;
+                }
+            for (size_t i = 0; i < newNodePos; i++)
+                currNode.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i + 1];
+            currNode.childrenNodesNumbers[newNodePos] = nodePassed.second;
+            nodePassed.first.parentNodeNum = currNodeNumber; // here
+            FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
+        }
     }
     else
     {
@@ -288,8 +315,20 @@ void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int directio
         parent.first.indexes[pos] = indexes[mid];
         for (size_t i = mid + 1; i < indexes.size(); i++)
             sibling.first.indexes[i - mid - 1] = indexes[i];
+        if (nodePassedUp)
+        {
+            // first move children in sibling then add node passed
+            for (size_t i = sibling.first.usedIndexes + 1; i > 0; i--)
+                sibling.first.childrenNodesNumbers[i] = sibling.first.childrenNodesNumbers[i - 1];
+
+            sibling.first.childrenNodesNumbers[0] = nodePassed.second;
+            nodePassed.first.parentNodeNum = sibling.second;
+            FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
+        }
     }
     sibling.first.usedIndexes++;
+    if (nodePassedUp)
+        nodePassedUp = false;
     FileManager::GetInstance().UpdateNode(currNode, parent.first.childrenNodesNumbers[pos]);
     FileManager::GetInstance().UpdateNode(parent.first, parent.second);
     FileManager::GetInstance().UpdateNode(sibling.first, sibling.second);
@@ -331,6 +370,9 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
 {
     height++;
+    std::pair<Node, size_t> nodePassed;
+    if (nodePassedUp)
+        nodePassed = Cache::GetInstance().Pop();
     std::vector<RecordIndex> indexes = currNode.indexes;
     indexes.push_back(ri);
     std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
@@ -342,6 +384,49 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     Node rightChild;
     InitNode(leftChild, rootNodeNum);
     InitNode(rightChild, rootNodeNum);
+
+    // set child nodes
+    if (nodePassedUp)
+    {
+        if (indexes[mid].index > ri.index) // from left nodes
+        {
+            rightChild.childrenNodesNumbers[0] = currNode.childrenNodesNumbers[mid];
+            for (size_t i = 0; i < mid; i++)
+                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
+            size_t currPos = mid - 1;
+            while (indexes[currPos].index > ri.index)
+            {
+                leftChild.childrenNodesNumbers[currPos + 1] = leftChild.childrenNodesNumbers[currPos];
+                currPos--;
+            }
+            leftChild.childrenNodesNumbers[currPos + 1] = nodePassed.second;
+
+            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
+                rightChild.childrenNodesNumbers[i - mid] = currNode.childrenNodesNumbers[i];
+        }
+        else if (indexes[mid].index == ri.index) // form middle node
+        {
+            for (size_t i = 0; i <= mid; i++)
+                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
+            rightChild.childrenNodesNumbers[0] = nodePassed.second;
+            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
+                rightChild.childrenNodesNumbers[i - mid] = currNode.childrenNodesNumbers[i];
+        }
+        else // form right nodes
+        {
+            for (size_t i = 0; i <= mid; i++)
+                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
+            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
+                rightChild.childrenNodesNumbers[i - mid - 1] = currNode.childrenNodesNumbers[i];
+            size_t currPos = indexes.size() - 1;
+            while (indexes[currPos].index > ri.index)
+            {
+                rightChild.childrenNodesNumbers[currPos - mid] = rightChild.childrenNodesNumbers[currPos - mid - 1];
+                currPos--;
+            }
+            rightChild.childrenNodesNumbers[currPos - mid] = nodePassed.second;
+        }
+    }
 
     for (size_t i = 0; i < mid; i++)
     {
@@ -359,6 +444,38 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     currNode.indexes[0] = indexes[mid];
     currNode.childrenNodesNumbers[0] = FileManager::GetInstance().InsertNewNode(leftChild);
     currNode.childrenNodesNumbers[1] = FileManager::GetInstance().InsertNewNode(rightChild);
+
+    // change parent of nodes since two new nodes are added
+    if (nodePassedUp)
+    {
+        if (indexes[mid].index < ri.index)
+            nodePassed.first.parentNodeNum = currNode.childrenNodesNumbers[0];
+        else
+            nodePassed.first.parentNodeNum = currNode.childrenNodesNumbers[1];
+
+        for (size_t i = 0; i <= order; i++)
+        {
+            if (leftChild.childrenNodesNumbers[i] != nodePassed.second)
+            {
+                auto node = FileManager::GetInstance().GetNode(leftChild.childrenNodesNumbers[i]);
+                node.parentNodeNum = currNode.childrenNodesNumbers[0];
+                FileManager::GetInstance().UpdateNode(node, leftChild.childrenNodesNumbers[i]);
+            }
+        }
+
+        for (size_t i = 0; i <= order; i++)
+        {
+            if (rightChild.childrenNodesNumbers[i] != nodePassed.second)
+            {
+                auto node = FileManager::GetInstance().GetNode(rightChild.childrenNodesNumbers[i]);
+                node.parentNodeNum = currNode.childrenNodesNumbers[1];
+                FileManager::GetInstance().UpdateNode(node, rightChild.childrenNodesNumbers[i]);
+            }
+        }
+
+        nodePassedUp = false;
+        FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
+    }
 
     FileManager::GetInstance().UpdateNode(currNode, rootNodeNum);
 
