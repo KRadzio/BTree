@@ -363,6 +363,8 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
                 nodePos = i;
                 break;
             }
+        if (nodePos == 0) // imposible to be placed there
+            nodePos = indexes.size();
         std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
         childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
 
@@ -436,6 +438,8 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
                 nodePos = i;
                 break;
             }
+        if (nodePos == 0) // imposible to be placed there
+            nodePos = indexes.size();
         std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
         childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
 

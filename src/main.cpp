@@ -107,6 +107,9 @@ int main()
     BTree::GetInstance().Add(rd);
     rd.index = 37;
     BTree::GetInstance().Add(rd);
+    rd.index = 55;
+    BTree::GetInstance().Add(rd);
+
     // BTree::GetInstance().Add(rd);
     // rd.index = 0;
     //  BTree::GetInstance().Add(rd);
