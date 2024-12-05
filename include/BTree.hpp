@@ -33,19 +33,20 @@ public:
     void Diplay();
     // search
     // add
+    // update (value in data)
     // delete
     // display
     // count reads and writes
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
-    void AddRecursive(RecordIndex& ri);
-    void AddToNode(Node &node, size_t nodeNumber, RecordIndex& ri);
+    void AddRecursive(RecordIndex &ri);
+    void AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri);
     void CreateRootNode(RecordData &rd);
-    bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex& ri);
-    void Compensate(Node& currNode, size_t pos, RecordIndex& ri, int direction);
-    void Split();
-    void SplitRoot(Node& currNode, RecordIndex& ri);
-    void InitNode(Node& node, size_t parentNum);
+    bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
+    void Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction);
+    void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
+    void SplitRoot(Node &currNode, RecordIndex &ri);
+    void InitNode(Node &node, size_t parentNum);
 
 private:
     BTree();
@@ -55,6 +56,7 @@ private:
     size_t rootNodeNum = 0;
     unsigned int height = 0;                  // by default
     unsigned int order = DEFAULT_BTREE_ORDER; // by default
+    bool nodePassedUp = false;                // after split
 };
 
 #endif

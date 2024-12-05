@@ -39,6 +39,8 @@ int main()
     BTree::GetInstance().Add(rd);
     rd.index = 13;
     BTree::GetInstance().Add(rd);
+    rd.index = 3;
+    BTree::GetInstance().Add(rd);
 
     // BTree::GetInstance().Add(rd);
     // rd.index = 0;

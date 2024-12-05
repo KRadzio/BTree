@@ -23,6 +23,7 @@ void BTree::SetOrder(unsigned int order)
     FileManager::GetInstance().SetNodeSize(order * 2);
     height = 0;
     rootNodeNum = 0;
+    nodePassedUp = false;
     FileManager::GetInstance().ClearBothFiles();
 }
 
@@ -93,7 +94,15 @@ bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
 
 void BTree::AddRecursive(RecordIndex &ri)
 {
-    auto currNodePair = Cache::GetInstance().Pop();
+    std::pair<Node, size_t> currNodePair;
+    if (nodePassedUp)
+    {
+        auto nodePassed = Cache::GetInstance().Pop();
+        currNodePair = Cache::GetInstance().Pop();
+        Cache::GetInstance().Push(nodePassed.first, nodePassed.second); // push it back
+    }
+    else
+        currNodePair = Cache::GetInstance().Pop();
     if (currNodePair.first.usedIndexes < 2 * order)
     {
         AddToNode(currNodePair.first, currNodePair.second, ri);
@@ -104,28 +113,57 @@ void BTree::AddRecursive(RecordIndex &ri)
     if (!compensationPossible)
     {
         if (currNodePair.first.parentNodeNum == NO_PARENT) // in root
-        {
             SplitRoot(currNodePair.first, ri);
-            return;
+        else
+        {
+            Split(currNodePair.first, currNodePair.second, ri);
+            AddRecursive(ri);
         }
     }
 }
 
 void BTree::AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri)
 {
+    std::pair<Node, size_t> nodePassed;
+    if (nodePassedUp) // if node is passed up
+        nodePassed = Cache::GetInstance().Pop();
+
     node.usedIndexes++; // incremented at the begining
     // the first empty place is indicated by usedIndexes
-    for (size_t i = node.usedIndexes - 1; i >= 1; i--)
+    if (nodePassedUp) // if not leaf
     {
-        if (node.indexes[i - 1].index > ri.index)
+        for (size_t i = node.usedIndexes - 1; i >= 1; i--)
         {
-            node.indexes[i] = node.indexes[i - 1];
-            node.indexes[i - 1] = ri;
+            if (node.indexes[i - 1].index > ri.index)
+            {
+                node.indexes[i] = node.indexes[i - 1];
+                node.childrenNodesNumbers[i+1] = node.childrenNodesNumbers[i];
+                node.indexes[i - 1] = ri;
+                node.childrenNodesNumbers[i] = nodePassed.second;
+            }
+            else // place found
+            {
+                node.indexes[i] = ri;
+                node.childrenNodesNumbers[i+1] = nodePassed.second;
+                break;
+            }
         }
-        else // place found
+        nodePassedUp = false;
+    }
+    else // if leaf
+    {
+        for (size_t i = node.usedIndexes - 1; i >= 1; i--)
         {
-            node.indexes[i] = ri;
-            break;
+            if (node.indexes[i - 1].index > ri.index)
+            {
+                node.indexes[i] = node.indexes[i - 1];
+                node.indexes[i - 1] = ri;
+            }
+            else // place found
+            {
+                node.indexes[i] = ri;
+                break;
+            }
         }
     }
     FileManager::GetInstance().UpdateNode(node, nodeNumber);
@@ -155,7 +193,7 @@ void BTree::CreateRootNode(RecordData &rd)
 bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 {
     // compensate only in leafs for now
-    if(currNode.parentNodeNum == NO_PARENT) // root 
+    if (currNode.parentNodeNum == NO_PARENT) // root
         return false;
     auto parentNodePair = Cache::GetInstance().GetLast();
     size_t pos;
@@ -163,8 +201,10 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
     Node rightSibling;
     for (size_t i = 0; i < parentNodePair.first.childrenNodesNumbers.size(); i++)
         if (currNodeNumber == parentNodePair.first.childrenNodesNumbers[i])
+        {
             pos = i;
-    // break can be added here
+            break;
+        }
     // left most
     if (pos == 0)
     {
@@ -255,7 +295,38 @@ void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int directio
     FileManager::GetInstance().UpdateNode(sibling.first, sibling.second);
 }
 
-void BTree::Split() {}
+void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
+{
+    // in case no node is passed we are in a leaf
+    auto parent = Cache::GetInstance().GetLast();
+    std::vector<RecordIndex> indexes = currNode.indexes;
+    indexes.push_back(ri);
+    std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
+              { return ri1.index < ri2.index; });
+    size_t mid = indexes.size() / 2;
+    Node newNode;
+    InitNode(newNode, parent.second);
+    currNode.usedIndexes = order;
+    // old node
+    for (size_t i = 0; i < order; i++)
+        currNode.indexes[i] = indexes[i];
+    for (size_t i = order; i < currNode.indexes.size(); i++)
+    {
+        currNode.indexes[i].index = INVALID_INDEX;
+        currNode.indexes[i].pageNumber = INVALID_PAGE;
+    }
+    // new node
+    for (size_t i = 0; i < order; i++)
+        newNode.indexes[i] = indexes[i + mid + 1];
+    newNode.usedIndexes = order;
+
+    FileManager::GetInstance().UpdateNode(currNode, currNodeNumber);
+
+    ri = indexes[mid]; // ri changed
+    size_t nodeNumber = FileManager::GetInstance().InsertNewNode(newNode);
+    Cache::GetInstance().Push(newNode, nodeNumber); // insert new node to cache
+    nodePassedUp = true;                            // set the flag
+}
 
 void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
 {
