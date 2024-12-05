@@ -336,8 +336,15 @@ void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, Record
 
 void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 {
-    // in case no node is passed we are in a leaf
-    auto parent = Cache::GetInstance().GetLast();
+    std::pair<Node, size_t> parent;
+    std::pair<Node, size_t> nodePassed;
+    if (nodePassedUp)
+    {
+        nodePassed = Cache::GetInstance().Pop();
+        parent = Cache::GetInstance().GetLast();
+    }
+    else
+        parent = Cache::GetInstance().GetLast();
     std::vector<RecordIndex> indexes = currNode.indexes;
     indexes.push_back(ri);
     std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
@@ -346,6 +353,27 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
     Node newNode;
     InitNode(newNode, parent.second);
     currNode.usedIndexes = order;
+
+    if (nodePassedUp)
+    {
+        size_t nodePos = 0;
+        for (size_t i = 0; i < indexes.size(); i++)
+            if (indexes[i].index > nodePassed.first.indexes[0].index)
+            {
+                nodePos = i;
+                break;
+            }
+        std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
+        childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
+
+        for (size_t i = 0; i < childNodesNumber.size(); i++)
+        {
+            if (i <= mid)
+                currNode.childrenNodesNumbers[i] = childNodesNumber[i];
+            else
+                newNode.childrenNodesNumbers[i - mid - 1] = childNodesNumber[i];
+        }
+    }
     // old node
     for (size_t i = 0; i < order; i++)
         currNode.indexes[i] = indexes[i];
@@ -353,6 +381,8 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
     {
         currNode.indexes[i].index = INVALID_INDEX;
         currNode.indexes[i].pageNumber = INVALID_PAGE;
+        if (nodePassedUp)
+            currNode.childrenNodesNumbers[i + 1] = NO_CHILDREN;
     }
     // new node
     for (size_t i = 0; i < order; i++)
@@ -363,6 +393,17 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
 
     ri = indexes[mid]; // ri changed
     size_t nodeNumber = FileManager::GetInstance().InsertNewNode(newNode);
+
+    if (nodePassedUp)
+    {
+        for (size_t i = 0; i <= newNode.usedIndexes; i++)
+        {
+            auto node = FileManager::GetInstance().GetNode(newNode.childrenNodesNumbers[i]);
+            node.parentNodeNum = nodeNumber;
+            FileManager::GetInstance().UpdateNode(node, newNode.childrenNodesNumbers[i]);
+        }
+    }
+
     Cache::GetInstance().Push(newNode, nodeNumber); // insert new node to cache
     nodePassedUp = true;                            // set the flag
 }
@@ -388,43 +429,22 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     // set child nodes
     if (nodePassedUp)
     {
-        if (indexes[mid].index > ri.index) // from left nodes
-        {
-            rightChild.childrenNodesNumbers[0] = currNode.childrenNodesNumbers[mid];
-            for (size_t i = 0; i < mid; i++)
-                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
-            size_t currPos = mid - 1;
-            while (indexes[currPos].index > ri.index)
+        size_t nodePos = 0;
+        for (size_t i = 0; i < indexes.size(); i++)
+            if (indexes[i].index > nodePassed.first.indexes[0].index)
             {
-                leftChild.childrenNodesNumbers[currPos + 1] = leftChild.childrenNodesNumbers[currPos];
-                currPos--;
+                nodePos = i;
+                break;
             }
-            leftChild.childrenNodesNumbers[currPos + 1] = nodePassed.second;
+        std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
+        childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
 
-            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
-                rightChild.childrenNodesNumbers[i - mid] = currNode.childrenNodesNumbers[i];
-        }
-        else if (indexes[mid].index == ri.index) // form middle node
+        for (size_t i = 0; i < childNodesNumber.size(); i++)
         {
-            for (size_t i = 0; i <= mid; i++)
-                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
-            rightChild.childrenNodesNumbers[0] = nodePassed.second;
-            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
-                rightChild.childrenNodesNumbers[i - mid] = currNode.childrenNodesNumbers[i];
-        }
-        else // form right nodes
-        {
-            for (size_t i = 0; i <= mid; i++)
-                leftChild.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i];
-            for (size_t i = mid + 1; i < currNode.childrenNodesNumbers.size(); i++)
-                rightChild.childrenNodesNumbers[i - mid - 1] = currNode.childrenNodesNumbers[i];
-            size_t currPos = indexes.size() - 1;
-            while (indexes[currPos].index > ri.index)
-            {
-                rightChild.childrenNodesNumbers[currPos - mid] = rightChild.childrenNodesNumbers[currPos - mid - 1];
-                currPos--;
-            }
-            rightChild.childrenNodesNumbers[currPos - mid] = nodePassed.second;
+            if (i <= mid)
+                leftChild.childrenNodesNumbers[i] = childNodesNumber[i];
+            else
+                rightChild.childrenNodesNumbers[i - mid - 1] = childNodesNumber[i];
         }
     }
 
