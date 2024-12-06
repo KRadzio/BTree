@@ -47,7 +47,7 @@ private:
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
     void InitNode(Node &node, size_t parentNum);
-    void ChangeParents(Node &child, Node &currNode, size_t newParentNumber, size_t nodePassedNum);
+    void ChangeParents(Node &child, size_t newParentNumber);
     void SetChildNodesIndexes(std::vector<size_t>& childNodesNumber, Node& dst1, Node& dst2, size_t mid);
     void FindNodePos(size_t& nodePos, std::pair<Node,size_t>& nodePassed, std::vector<RecordIndex>& indexes);
 
