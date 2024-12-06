@@ -453,15 +453,12 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     }
 
     for (size_t i = 0; i < mid; i++)
-    {
         leftChild.indexes[i] = indexes[i];
-        leftChild.usedIndexes++;
-    }
     for (size_t i = mid + 1; i < indexes.size(); i++)
-    {
         rightChild.indexes[i - mid - 1] = indexes[i];
-        rightChild.usedIndexes++;
-    }
+
+    leftChild.usedIndexes = rightChild.usedIndexes = order;
+
     // reset root
     InitNode(currNode, NO_PARENT);
     currNode.usedIndexes++;
@@ -477,25 +474,8 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
         else
             nodePassed.first.parentNodeNum = currNode.childrenNodesNumbers[1];
 
-        for (size_t i = 0; i <= order; i++)
-        {
-            if (leftChild.childrenNodesNumbers[i] != nodePassed.second)
-            {
-                auto node = FileManager::GetInstance().GetNode(leftChild.childrenNodesNumbers[i]);
-                node.parentNodeNum = currNode.childrenNodesNumbers[0];
-                FileManager::GetInstance().UpdateNode(node, leftChild.childrenNodesNumbers[i]);
-            }
-        }
-
-        for (size_t i = 0; i <= order; i++)
-        {
-            if (rightChild.childrenNodesNumbers[i] != nodePassed.second)
-            {
-                auto node = FileManager::GetInstance().GetNode(rightChild.childrenNodesNumbers[i]);
-                node.parentNodeNum = currNode.childrenNodesNumbers[1];
-                FileManager::GetInstance().UpdateNode(node, rightChild.childrenNodesNumbers[i]);
-            }
-        }
+        ChangeParents(leftChild, currNode, currNode.childrenNodesNumbers[0], nodePassed.second);
+        ChangeParents(rightChild, currNode, currNode.childrenNodesNumbers[1], nodePassed.second);
 
         nodePassedUp = false;
         FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
@@ -520,4 +500,17 @@ void BTree::InitNode(Node &node, size_t parentNum)
     }
     for (size_t i = 0; i < node.childrenNodesNumbers.size(); i++)
         node.childrenNodesNumbers[i] = NO_CHILDREN;
+}
+
+void BTree::ChangeParents(Node &child, Node &currNode, size_t newParentNumber, size_t nodePassedNum)
+{
+    for (size_t i = 0; i <= order; i++)
+    {
+        if (child.childrenNodesNumbers[i] != nodePassedNum)
+        {
+            auto node = FileManager::GetInstance().GetNode(child.childrenNodesNumbers[i]);
+            node.parentNodeNum = newParentNumber;
+            FileManager::GetInstance().UpdateNode(node, child.childrenNodesNumbers[i]);
+        }
+    }
 }

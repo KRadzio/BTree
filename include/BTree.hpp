@@ -47,6 +47,7 @@ private:
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
     void InitNode(Node &node, size_t parentNum);
+    void ChangeParents(Node &child, Node &currNode, size_t newParentNumber, size_t nodePassedNum);
 
 private:
     BTree();
