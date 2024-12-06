@@ -29,18 +29,13 @@ public:
 
     bool Search(size_t key, bool clearCache = true);
     void Add(RecordData &rd);
-    void Delete(RecordIndex ri);
+    void Delete(size_t key);
     void Diplay();
     void Update(RecordData &rd);
-    // search
-    // add
-    // update (value in data)
-    // delete
-    // display
-    // count reads and writes
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
     void AddRecursive(RecordIndex &ri);
+    void DeleteRecursive(RecordIndex &ri);
     void AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri);
     void CreateRootNode(RecordData &rd);
     bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);

@@ -63,12 +63,34 @@ void BTree::Add(RecordData &rd)
     }
 }
 
-void BTree::Delete(RecordIndex ri) {}
+void BTree::Delete(size_t key)
+{
+    if (key == INVALID_INDEX)
+        return;
+    if (!Search(key, false))
+        Cache::GetInstance().ClearCache();
+    else
+    {
+        RecordIndex ri;
+        ri.index = key;
+        auto node = Cache::GetInstance().GetLast();
+        for (size_t i = 0; i < node.first.indexes.size(); i++)
+            if (node.first.indexes[i].index == key)
+            {
+                ri.pageNumber = node.first.indexes[i].pageNumber;
+                break;
+            }
+        DeleteRecursive(ri);
+        Cache::GetInstance().ClearCache();
+    }
+}
 
 void BTree::Diplay() {}
 
 void BTree::Update(RecordData &rd)
 {
+    if (rd.index == INVALID_INDEX)
+        return;
     if (!Search(rd.index, false))
         return;
     else
@@ -143,6 +165,10 @@ void BTree::AddRecursive(RecordIndex &ri)
             AddRecursive(ri);
         }
     }
+}
+
+void BTree::DeleteRecursive(RecordIndex &ri)
+{
 }
 
 void BTree::AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri)
