@@ -161,19 +161,10 @@ void BTree::CreateRootNode(RecordData &rd)
     height++;
     Cache::GetInstance().SetSize(height + 1);
     Node n;
-    n.parentNodeNum = NO_PARENT;
+    InitNode(n,NO_PARENT);
     n.usedIndexes = 1;
-    n.childrenNodesNumbers = std::vector<size_t>(order * 2 + 1);
-    for (size_t i = 0; i < n.childrenNodesNumbers.size(); i++)
-        n.childrenNodesNumbers[i] = NO_CHILDREN;
-    n.indexes = std::vector<RecordIndex>(order * 2);
     n.indexes[0].index = rd.index;
     n.indexes[0].pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
-    for (size_t i = 1; i < n.indexes.size(); i++)
-    {
-        n.indexes[i].index = INVALID_INDEX;
-        n.indexes[i].pageNumber = INVALID_PAGE;
-    }
     rootNodeNum = FileManager::GetInstance().InsertNewNode(n);
 }
 
@@ -357,24 +348,10 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
     if (nodePassedUp)
     {
         size_t nodePos = 0;
-        for (size_t i = 0; i < indexes.size(); i++)
-            if (indexes[i].index > nodePassed.first.indexes[0].index)
-            {
-                nodePos = i;
-                break;
-            }
-        if (nodePos == 0) // imposible to be placed there
-            nodePos = indexes.size();
+        FindNodePos(nodePos, nodePassed, indexes);
         std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
         childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
-
-        for (size_t i = 0; i < childNodesNumber.size(); i++)
-        {
-            if (i <= mid)
-                currNode.childrenNodesNumbers[i] = childNodesNumber[i];
-            else
-                newNode.childrenNodesNumbers[i - mid - 1] = childNodesNumber[i];
-        }
+        SetChildNodesIndexes(childNodesNumber, currNode, newNode, mid);
     }
     // old node
     for (size_t i = 0; i < order; i++)
@@ -396,6 +373,7 @@ void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)
     ri = indexes[mid]; // ri changed
     size_t nodeNumber = FileManager::GetInstance().InsertNewNode(newNode);
 
+    // update children only in new node
     if (nodePassedUp)
     {
         for (size_t i = 0; i <= newNode.usedIndexes; i++)
@@ -432,24 +410,10 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     if (nodePassedUp)
     {
         size_t nodePos = 0;
-        for (size_t i = 0; i < indexes.size(); i++)
-            if (indexes[i].index > nodePassed.first.indexes[0].index)
-            {
-                nodePos = i;
-                break;
-            }
-        if (nodePos == 0) // imposible to be placed there
-            nodePos = indexes.size();
+        FindNodePos(nodePos, nodePassed, indexes);
         std::vector<size_t> childNodesNumber = currNode.childrenNodesNumbers;
         childNodesNumber.emplace(childNodesNumber.begin() + nodePos, nodePassed.second);
-
-        for (size_t i = 0; i < childNodesNumber.size(); i++)
-        {
-            if (i <= mid)
-                leftChild.childrenNodesNumbers[i] = childNodesNumber[i];
-            else
-                rightChild.childrenNodesNumbers[i - mid - 1] = childNodesNumber[i];
-        }
+        SetChildNodesIndexes(childNodesNumber, leftChild, rightChild, mid);
     }
 
     for (size_t i = 0; i < mid; i++)
@@ -495,7 +459,6 @@ void BTree::InitNode(Node &node, size_t parentNum)
     for (size_t i = 0; i < node.indexes.size(); i++)
     {
         node.indexes[i].index = INVALID_INDEX;
-
         node.indexes[i].pageNumber = INVALID_PAGE;
     }
     for (size_t i = 0; i < node.childrenNodesNumbers.size(); i++)
@@ -513,4 +476,27 @@ void BTree::ChangeParents(Node &child, Node &currNode, size_t newParentNumber, s
             FileManager::GetInstance().UpdateNode(node, child.childrenNodesNumbers[i]);
         }
     }
+}
+
+void BTree::SetChildNodesIndexes(std::vector<size_t> &childNodesNumber, Node &dst1, Node &dst2, size_t mid)
+{
+    for (size_t i = 0; i < childNodesNumber.size(); i++)
+    {
+        if (i <= mid)
+            dst1.childrenNodesNumbers[i] = childNodesNumber[i];
+        else
+            dst2.childrenNodesNumbers[i - mid - 1] = childNodesNumber[i];
+    }
+}
+
+void BTree::FindNodePos(size_t &nodePos, std::pair<Node, size_t> &nodePassed, std::vector<RecordIndex> &indexes)
+{
+    for (size_t i = 0; i < indexes.size(); i++)
+        if (indexes[i].index > nodePassed.first.indexes[0].index)
+        {
+            nodePos = i;
+            break;
+        }
+    if (nodePos == 0) // imposible to be placed there
+        nodePos = indexes.size();
 }
