@@ -110,6 +110,13 @@ int main()
     rd.index = 55;
     BTree::GetInstance().Add(rd);
 
+    rd.value = "hrtjki";
+    BTree::GetInstance().Update(rd);
+    rd.index = 7;
+    BTree::GetInstance().Update(rd);
+    rd.index = 100;
+    BTree::GetInstance().Update(rd);
+
     // BTree::GetInstance().Add(rd);
     // rd.index = 0;
     //  BTree::GetInstance().Add(rd);

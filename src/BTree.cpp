@@ -67,6 +67,32 @@ void BTree::Delete(RecordIndex ri) {}
 
 void BTree::Diplay() {}
 
+void BTree::Update(RecordData &rd)
+{
+    if (!Search(rd.index, false))
+        return;
+    else
+    {
+        auto node = Cache::GetInstance().GetLast();
+        size_t pos = 0;
+        for (size_t i = 0; i < node.first.usedIndexes; i++)
+            if (rd.index == node.first.indexes[i].index)
+            {
+                pos = i;
+                break;
+            }
+        auto dataPage = FileManager::GetInstance().GetDataPage(node.first.indexes[pos].pageNumber);
+        for (size_t i = 0; i < DATA_PAGE_SIZE; i++)
+            if (dataPage.records[i].index == rd.index)
+            {
+                dataPage.records[i].value = rd.value;
+                break;
+            }
+        FileManager::GetInstance().UpdateDataPage(node.first.indexes[pos].pageNumber, dataPage);
+        Cache::GetInstance().ClearCache();
+    }
+}
+
 bool BTree::SearchRecursive(size_t currNodeNum, size_t key)
 {
     if (currNodeNum == INVALID_NODE) // end of tree (leafs do not have children)

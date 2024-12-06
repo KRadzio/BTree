@@ -31,6 +31,7 @@ public:
     void Add(RecordData &rd);
     void Delete(RecordIndex ri);
     void Diplay();
+    void Update(RecordData &rd);
     // search
     // add
     // update (value in data)
