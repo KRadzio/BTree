@@ -27,25 +27,35 @@ public:
     void Init(unsigned int order);
     void SetOrder(unsigned int order); // changes the order of the tree and resets the tree
 
-    bool Search(size_t key, bool clearCache = true);
+    bool Search(size_t key, bool clearCache = true); // puts visited nodes in cache
     void Add(RecordData &rd);
     void Delete(size_t key);
     void Diplay();
     void Update(RecordData &rd);
+
+// helper functions
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
     void AddRecursive(RecordIndex &ri);
-    void DeleteRecursive(RecordIndex &ri);
+    void PostDeletionFix();
     void AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri);
     void CreateRootNode(RecordData &rd);
     bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction);
+    bool TryCompensateDeletion();
+    void CompensateDeletion();
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
+    void Merge();
+    void MergeRoot();
     void InitNode(Node &node, size_t parentNum);
     void ChangeParents(Node &child, size_t newParentNumber);
-    void SetChildNodesIndexes(std::vector<size_t>& childNodesNumber, Node& dst1, Node& dst2, size_t mid);
-    void FindNodePos(size_t& nodePos, std::pair<Node,size_t>& nodePassed, std::vector<RecordIndex>& indexes);
+    void SetChildNodesIndexes(std::vector<size_t> &childNodesNumber, Node &dst1, Node &dst2, size_t mid);
+    void FindNodePos(size_t &nodePos, std::pair<Node, size_t> &nodePassed, std::vector<RecordIndex> &indexes);
+    void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex& ri);
+    RecordIndex FindReplacement(Node &currNode, size_t nodeNumber, int direction);
+    void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex& ri);
+
 
 private:
     BTree();
@@ -56,6 +66,7 @@ private:
     unsigned int height = 0;                  // by default
     unsigned int order = DEFAULT_BTREE_ORDER; // by default
     bool nodePassedUp = false;                // after split
+    bool mergePerformed = false;              // after merge
 };
 
 #endif
