@@ -130,6 +130,13 @@ int main()
     BTree::GetInstance().Delete(20);
     BTree::GetInstance().Delete(19);
     BTree::GetInstance().Delete(52);
+    BTree::GetInstance().Delete(53);
+    BTree::GetInstance().Delete(42);
+    BTree::GetInstance().Delete(54);
+    BTree::GetInstance().Delete(55);
+    BTree::GetInstance().Delete(49);
+    BTree::GetInstance().Delete(48);
+    BTree::GetInstance().Delete(44);
 
     // rd.index = 43;
     // BTree::GetInstance().Add(rd);

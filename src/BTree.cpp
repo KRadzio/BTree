@@ -304,6 +304,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
             Compensate(currNode, currNodeNumber, pos, ri, LEFT);
+            return true;
         }
         if (rightSibling.usedIndexes < order * 2)
         {
@@ -360,13 +361,15 @@ void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, Record
             auto node = FileManager::GetInstance().GetNode(currNode.childrenNodesNumbers[0]);
             node.parentNodeNum = sibling.second;
             FileManager::GetInstance().UpdateNode(node, currNode.childrenNodesNumbers[0]);
-            size_t newNodePos;
+            size_t newNodePos = 0;
             for (size_t i = 0; i < order * 2; i++)
-                if (currNode.indexes[i].index > nodePassed.first.indexes[0].index)
+                if (currNode.indexes[i].index > nodePassed.first.indexes[nodePassed.first.usedIndexes - 1].index)
                 {
                     newNodePos = i;
                     break;
                 }
+            if (newNodePos == 0)
+                newNodePos = order * 2;
             for (size_t i = 0; i < newNodePos; i++)
                 currNode.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i + 1];
             currNode.childrenNodesNumbers[newNodePos] = nodePassed.second;
@@ -387,10 +390,32 @@ void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, Record
             // first move children in sibling then add node passed
             for (size_t i = sibling.first.usedIndexes + 1; i > 0; i--)
                 sibling.first.childrenNodesNumbers[i] = sibling.first.childrenNodesNumbers[i - 1];
+            size_t newNodePos = 0;
+            for (size_t i = 0; i < order * 2; i++)
+                if (currNode.indexes[i].index > nodePassed.first.indexes[nodePassed.first.usedIndexes - 1].index)
+                {
+                    newNodePos = i;
+                    break;
+                }
+            if (newNodePos == 0)
+                newNodePos = order * 2;
 
-            sibling.first.childrenNodesNumbers[0] = nodePassed.second;
-            nodePassed.first.parentNodeNum = sibling.second;
-            FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
+            if (newNodePos == order * 2)
+            {
+                sibling.first.childrenNodesNumbers[0] = nodePassed.second;
+                nodePassed.first.parentNodeNum = sibling.second;
+                FileManager::GetInstance().UpdateNode(nodePassed.first, nodePassed.second);
+            }
+            else
+            {
+                sibling.first.childrenNodesNumbers[0] = currNode.childrenNodesNumbers[order * 2];
+                auto node = FileManager::GetInstance().GetNode(currNode.childrenNodesNumbers[order * 2]);
+                node.parentNodeNum = sibling.second;
+                FileManager::GetInstance().UpdateNode(node, currNode.childrenNodesNumbers[order * 2]);
+                for (size_t i = order * 2; i > newNodePos; i--)
+                    currNode.childrenNodesNumbers[i] = currNode.childrenNodesNumbers[i - 1];
+                currNode.childrenNodesNumbers[newNodePos] = nodePassed.second;
+            }
         }
     }
     sibling.first.usedIndexes++;
@@ -883,7 +908,7 @@ void BTree::ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, Reco
         tmp.pop();
         Cache::GetInstance().Push(currCachedNode);
     }
-    
+
     // the path to the node with replacement was cached
     // so it is the last node that we visited
     auto node = Cache::GetInstance().GetLast();
