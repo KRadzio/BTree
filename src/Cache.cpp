@@ -25,6 +25,14 @@ void Cache::Push(Node &node, size_t nodeNumber)
         std::cout << "Cache is full" << std::endl;
 }
 
+void Cache::Push(std::pair<Node, size_t> &node)
+{
+    if (cachedNodes.size() < size)
+        cachedNodes.push(node);
+    else
+        std::cout << "Cache is full" << std::endl;
+}
+
 std::pair<Node, size_t> Cache::Pop()
 {
     auto tmp = cachedNodes.top();

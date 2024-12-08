@@ -33,7 +33,7 @@ public:
     void Diplay();
     void Update(RecordData &rd);
 
-// helper functions
+    // helper functions
 private:
     bool SearchRecursive(size_t currNodeNum, size_t key);
     void AddRecursive(RecordIndex &ri);
@@ -42,8 +42,8 @@ private:
     void CreateRootNode(RecordData &rd);
     bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction);
-    bool TryCompensateDeletion();
-    void CompensateDeletion();
+    bool TryCompensateDeletion(std::pair<Node, size_t> &currNode);
+    void CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, int direction);
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
     void Merge();
@@ -52,10 +52,10 @@ private:
     void ChangeParents(Node &child, size_t newParentNumber);
     void SetChildNodesIndexes(std::vector<size_t> &childNodesNumber, Node &dst1, Node &dst2, size_t mid);
     void FindNodePos(size_t &nodePos, std::pair<Node, size_t> &nodePassed, std::vector<RecordIndex> &indexes);
-    void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex& ri);
+    size_t FindChildNodePos(std::pair<Node, size_t> &parent, size_t childNodeNumber);
+    void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex &ri);
     RecordIndex FindReplacement(Node &currNode, size_t nodeNumber, int direction);
-    void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex& ri);
-
+    void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex &ri);
 
 private:
     BTree();
