@@ -332,17 +332,18 @@ void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, Record
     std::sort(indexes.begin(), indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
               { return ri1.index < ri2.index; });
 
-    size_t mid = indexes.size() / 2;
-
+    size_t splitPoint;
+    // FIRST FILL THE NODE THAT IS FULL
+    // THEN MID AND THE OTHER ONE
     if (direction == LEFT) // rotate left
     {
+        splitPoint = sibling.first.usedIndexes+1;
+        // wrong shift with higher order
         // move indexes
-        if (indexes.size() % 2 == 0)
-            mid--;
-        for (size_t i = mid + 1; i < indexes.size(); i++)
-            currNode.indexes[i - mid - 1] = indexes[i];
-        parent.first.indexes[pos - 1] = indexes[mid];
-        for (size_t i = 0; i < mid; i++)
+        for (size_t i = splitPoint + 1; i < indexes.size(); i++)
+            currNode.indexes[i - splitPoint - 1] = indexes[i];
+        parent.first.indexes[pos - 1] = indexes[splitPoint];
+        for (size_t i = 0; i < splitPoint; i++)
             sibling.first.indexes[i] = indexes[i];
         // move child node indexes
         if (nodePassedUp)
@@ -366,12 +367,13 @@ void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, Record
     }
     else // rotate right
     {
+        splitPoint = currNode.usedIndexes;
         // move indexes
-        for (size_t i = 0; i < mid; i++)
+        for (size_t i = 0; i < splitPoint; i++)
             currNode.indexes[i] = indexes[i];
-        parent.first.indexes[pos] = indexes[mid];
-        for (size_t i = mid + 1; i < indexes.size(); i++)
-            sibling.first.indexes[i - mid - 1] = indexes[i];
+        parent.first.indexes[pos] = indexes[splitPoint];
+        for (size_t i = splitPoint + 1; i < indexes.size(); i++)
+            sibling.first.indexes[i - splitPoint - 1] = indexes[i];
         // move child node indexes
         if (nodePassedUp)
         {
