@@ -46,8 +46,8 @@ private:
     void CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, int direction);
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
     void SplitRoot(Node &currNode, RecordIndex &ri);
-    void Merge();
-    void MergeRoot();
+    void Merge(std::pair<Node, size_t> &currNode);
+    void MergeRoot(std::pair<Node, size_t> &currNode, std::pair<Node, size_t> &sibling);
     void InitNode(Node &node, size_t parentNum);
     void ChangeParents(Node &child, size_t newParentNumber);
     void SetChildNodesIndexes(std::vector<size_t> &childNodesNumber, Node &dst1, Node &dst2, size_t mid);
@@ -56,6 +56,7 @@ private:
     void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex &ri);
     RecordIndex FindReplacement(Node &currNode, size_t nodeNumber, int direction);
     void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex &ri);
+    void ClearNode(std::pair<Node,size_t>& node);
 
 private:
     BTree();

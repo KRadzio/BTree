@@ -188,9 +188,22 @@ void BTree::AddRecursive(RecordIndex &ri)
 void BTree::PostDeletionFix()
 {
     auto currNode = Cache::GetInstance().Pop();
-    auto paretNode = Cache::GetInstance().GetLast();
-    if (!TryCompensateDeletion(currNode))
-        Merge();
+    if (currNode.first.usedIndexes < order)
+    {
+        // we are in root and root can have less then x = order number of records
+        if (currNode.first.parentNodeNum == NO_PARENT)
+            return;
+        // there may be an extra read
+        if (!TryCompensateDeletion(currNode))
+        {
+            Merge(currNode);
+            PostDeletionFix();
+        }
+        else // reset flag after succesful compensation
+            mergePerformed = false;
+    }
+    else // reset flag after fixing
+        mergePerformed = false;
 }
 
 void BTree::AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri)
@@ -405,11 +418,11 @@ bool BTree::TryCompensateDeletion(std::pair<Node, size_t> &currNode)
     {
         rightSibling.first = FileManager::GetInstance().GetNode(parent.first.childrenNodesNumbers[pos + 1]);
         rightSibling.second = parent.first.childrenNodesNumbers[pos + 1];
+        Cache::GetInstance().Push(rightSibling);
         if (rightSibling.first.usedIndexes == order)
             return false;
         else
         {
-            Cache::GetInstance().Push(rightSibling);
             CompensateDeletion(currNode, pos, LEFT);
             return true;
         }
@@ -419,11 +432,11 @@ bool BTree::TryCompensateDeletion(std::pair<Node, size_t> &currNode)
     {
         leftSibling.first = FileManager::GetInstance().GetNode(parent.first.childrenNodesNumbers[pos - 1]);
         leftSibling.second = parent.first.childrenNodesNumbers[pos - 1];
+        Cache::GetInstance().Push(leftSibling);
         if (leftSibling.first.usedIndexes == order)
             return false;
         else
         {
-            Cache::GetInstance().Push(leftSibling);
             CompensateDeletion(currNode, pos, RIGHT);
             return true;
         }
@@ -433,21 +446,20 @@ bool BTree::TryCompensateDeletion(std::pair<Node, size_t> &currNode)
     leftSibling.second = parent.first.childrenNodesNumbers[pos - 1];
     rightSibling.first = FileManager::GetInstance().GetNode(parent.first.childrenNodesNumbers[pos + 1]);
     rightSibling.second = parent.first.childrenNodesNumbers[pos + 1];
+    Cache::GetInstance().Push(rightSibling); // by default we take the right sibling
     if (leftSibling.first.usedIndexes == order && rightSibling.first.usedIndexes == order)
         return false;
     else
     {
         if (leftSibling.first.usedIndexes > order)
         {
+            Cache::GetInstance().Pop();
             Cache::GetInstance().Push(leftSibling);
             CompensateDeletion(currNode, pos, RIGHT);
             return true;
         }
         if (rightSibling.first.usedIndexes > order)
-        {
-            Cache::GetInstance().Push(rightSibling);
             CompensateDeletion(currNode, pos, LEFT);
-        }
         return true;
     }
 }
@@ -459,8 +471,8 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
 
     // put all indexed to one vector
     std::vector<RecordIndex> indexes;
-    for(size_t i=0; i<currNode.first.usedIndexes; i++)
-      indexes.push_back(currNode.first.indexes[i]);
+    for (size_t i = 0; i < currNode.first.usedIndexes; i++)
+        indexes.push_back(currNode.first.indexes[i]);
     if (direction == LEFT)
         indexes.push_back(parent.first.indexes[pos]);
     else
@@ -502,7 +514,7 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
         // move indexes
         for (size_t i = 0; i < splitPoint; i++)
             sibling.first.indexes[i] = indexes[i];
-        parent.first.indexes[pos-1] = indexes[splitPoint];
+        parent.first.indexes[pos - 1] = indexes[splitPoint];
         for (size_t i = splitPoint + 1; i < indexes.size(); i++)
             currNode.first.indexes[i - splitPoint - 1] = indexes[i];
         // move child node indexes
@@ -642,12 +654,109 @@ void BTree::SplitRoot(Node &currNode, RecordIndex &ri)
     Cache::GetInstance().SetSize(height + 1);
 }
 
-void BTree::Merge()
+void BTree::Merge(std::pair<Node, size_t> &currNode)
 {
+    std::pair<Node, size_t> sibling = Cache::GetInstance().Pop();
+    std::pair<Node, size_t> parent = Cache::GetInstance().GetLast();
+
+    // node pos in parent childNodesVector
+    size_t currNodPos = FindChildNodePos(parent, currNode.second);
+    // postion of element for merging
+    size_t recordPos;
+    if (currNodPos == parent.first.usedIndexes) // right most
+    {
+
+        recordPos = parent.first.usedIndexes - 1;
+        sibling.second = parent.first.childrenNodesNumbers[recordPos];
+    }
+    else // other
+    {
+        recordPos = currNodPos;
+        sibling.second = parent.first.childrenNodesNumbers[currNodPos + 1];
+    }
+    // if parent is root and there is only one index in there
+    if (parent.first.parentNodeNum == NO_PARENT && parent.first.usedIndexes == 1)
+    {
+        MergeRoot(currNode, sibling);
+        return;
+    }
+    // indexes
+    // move record from parent
+    currNode.first.indexes[currNode.first.usedIndexes] = parent.first.indexes[recordPos];
+    parent.first.indexes[recordPos].index = INVALID_INDEX;
+    parent.first.indexes[recordPos].pageNumber = INVALID_PAGE;
+    // move records from sibling
+    currNode.first.usedIndexes++;
+    for (size_t i = currNode.first.usedIndexes; i < order * 2; i++)
+        currNode.first.indexes[i] = sibling.first.indexes[i - currNode.first.usedIndexes];
+     currNode.first.usedIndexes = order * 2;
+    // by default the are sorted but if we merge the right most node
+    // it is not sorted
+    if (currNodPos == parent.first.usedIndexes)
+    {
+        std::sort(currNode.first.indexes.begin(), currNode.first.indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
+                  { return ri1.index < ri2.index; });
+    }
+    // shift records and child nodes
+    for (size_t i = recordPos; i < parent.first.usedIndexes - 1; i++)
+    {
+        parent.first.indexes[i] = parent.first.indexes[i + 1];
+        parent.first.childrenNodesNumbers[i + 1] = parent.first.childrenNodesNumbers[i + 2];
+    }
+
+    if (currNodPos == parent.first.usedIndexes)
+        parent.first.childrenNodesNumbers[recordPos] = parent.first.childrenNodesNumbers[currNodPos];
+
+    parent.first.usedIndexes--;
+
+    // clear unused records
+    for (size_t i = parent.first.usedIndexes; i < order * 2; i++)
+    {
+        parent.first.indexes[i].index = INVALID_INDEX;
+        parent.first.indexes[i].pageNumber = INVALID_PAGE;
+        parent.first.childrenNodesNumbers[i + 1] = NO_CHILDREN;
+    }
+    parent.first.childrenNodesNumbers[order * 2] = NO_CHILDREN;
+
+    // currNode is not a leaf so some of the childer have to be updated
+    // (the ones from sibling)
+    if (mergePerformed)
+    {
+        std::vector<size_t> childNodeIndexes;
+        for (size_t i = 0; i < order; i++)
+            childNodeIndexes.push_back(currNode.first.childrenNodesNumbers[i]);
+        // it was decremented above
+        if (currNodPos == parent.first.usedIndexes + 1)
+            for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
+                childNodeIndexes.emplace(childNodeIndexes.begin()+i, sibling.first.childrenNodesNumbers[i]);
+        else
+            for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
+                childNodeIndexes.push_back(sibling.first.childrenNodesNumbers[i]);
+        currNode.first.childrenNodesNumbers = childNodeIndexes;
+
+        ChangeParents(sibling.first, currNode.second);
+    }
+   
+
+    // sibling is removed
+    ClearNode(sibling);
+    FileManager::GetInstance().UpdateNode(parent.first, parent.second);
+    FileManager::GetInstance().UpdateNode(currNode.first, currNode.second);
+    // refresh parent in cache
+    Cache::GetInstance().Pop();
+    Cache::GetInstance().Push(parent);
+
+    mergePerformed = true;
 }
 
-void BTree::MergeRoot()
+void BTree::MergeRoot(std::pair<Node, size_t> &currNode, std::pair<Node, size_t> &sibling)
 {
+    // not in leaf update child nodes
+    if (mergePerformed)
+    {
+    }
+
+    mergePerformed = false;
 }
 
 void BTree::InitNode(Node &node, size_t parentNum)
@@ -821,4 +930,18 @@ void BTree::DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordInde
     }
     if (node.usedIndexes < order)
         PostDeletionFix();
+}
+
+void BTree::ClearNode(std::pair<Node, size_t> &node)
+{
+    node.first.usedIndexes = 0;
+    node.first.parentNodeNum = NO_PARENT;
+    for (size_t i = 0; i < order * 2; i++)
+    {
+        node.first.childrenNodesNumbers[i] = NO_CHILDREN;
+        node.first.indexes[i].index = INVALID_INDEX;
+        node.first.indexes[i].pageNumber = INVALID_PAGE;
+    }
+    node.first.childrenNodesNumbers[order * 2] = NO_CHILDREN;
+    FileManager::GetInstance().UpdateNode(node.first, node.second);
 }
