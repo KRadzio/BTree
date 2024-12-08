@@ -12,9 +12,8 @@ Cache &Cache::GetInstance()
 void Cache::SetSize(unsigned int size)
 {
     this->size = size;
-    auto tmp = cachedNodes;
     while (!cachedNodes.empty())
-        tmp.pop();
+        cachedNodes.pop();
 }
 
 void Cache::Push(Node &node, size_t nodeNumber)

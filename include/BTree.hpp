@@ -30,8 +30,9 @@ public:
     bool Search(size_t key, bool clearCache = true); // puts visited nodes in cache
     void Add(RecordData &rd);
     void Delete(size_t key);
-    void Diplay();
     void Update(RecordData &rd);
+
+    inline size_t GetRootNum() { return rootNodeNum; }
 
     // helper functions
 private:
@@ -56,7 +57,7 @@ private:
     void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex &ri);
     RecordIndex FindReplacement(Node &currNode, size_t nodeNumber, int direction);
     void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex &ri);
-    void ClearNode(std::pair<Node,size_t>& node);
+    void ClearNode(std::pair<Node, size_t> &node);
 
 private:
     BTree();

@@ -73,7 +73,7 @@ void BTree::Delete(size_t key)
     {
         RecordIndex ri;
         ri.index = key;
-        auto node = Cache::GetInstance().Pop();
+        auto node = Cache::GetInstance().GetLast();
         size_t pos = 0;
         for (size_t i = 0; i < order * 2; i++)
             if (node.first.indexes[i].index == key)
@@ -102,8 +102,6 @@ void BTree::Delete(size_t key)
         Cache::GetInstance().ClearCache();
     }
 }
-
-void BTree::Diplay() {}
 
 void BTree::Update(RecordData &rd)
 {
@@ -689,7 +687,7 @@ void BTree::Merge(std::pair<Node, size_t> &currNode)
     currNode.first.usedIndexes++;
     for (size_t i = currNode.first.usedIndexes; i < order * 2; i++)
         currNode.first.indexes[i] = sibling.first.indexes[i - currNode.first.usedIndexes];
-     currNode.first.usedIndexes = order * 2;
+    currNode.first.usedIndexes = order * 2;
     // by default the are sorted but if we merge the right most node
     // it is not sorted
     if (currNodPos == parent.first.usedIndexes)
@@ -720,6 +718,7 @@ void BTree::Merge(std::pair<Node, size_t> &currNode)
 
     // currNode is not a leaf so some of the childer have to be updated
     // (the ones from sibling)
+    // and child nodes need to be placed in order
     if (mergePerformed)
     {
         std::vector<size_t> childNodeIndexes;
@@ -728,7 +727,7 @@ void BTree::Merge(std::pair<Node, size_t> &currNode)
         // it was decremented above
         if (currNodPos == parent.first.usedIndexes + 1)
             for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
-                childNodeIndexes.emplace(childNodeIndexes.begin()+i, sibling.first.childrenNodesNumbers[i]);
+                childNodeIndexes.emplace(childNodeIndexes.begin() + i, sibling.first.childrenNodesNumbers[i]);
         else
             for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
                 childNodeIndexes.push_back(sibling.first.childrenNodesNumbers[i]);
@@ -736,7 +735,6 @@ void BTree::Merge(std::pair<Node, size_t> &currNode)
 
         ChangeParents(sibling.first, currNode.second);
     }
-   
 
     // sibling is removed
     ClearNode(sibling);
@@ -745,17 +743,49 @@ void BTree::Merge(std::pair<Node, size_t> &currNode)
     // refresh parent in cache
     Cache::GetInstance().Pop();
     Cache::GetInstance().Push(parent);
-
     mergePerformed = true;
 }
 
 void BTree::MergeRoot(std::pair<Node, size_t> &currNode, std::pair<Node, size_t> &sibling)
 {
+    std::pair<Node, size_t> parent = Cache::GetInstance().GetLast();
+
+    height--;
+    // put all records into currNode
+    currNode.first.indexes[currNode.first.usedIndexes] = parent.first.indexes[0];
+    currNode.first.usedIndexes++;
+    for (size_t i = 0; i < sibling.first.usedIndexes; i++)
+        currNode.first.indexes[currNode.first.usedIndexes + i] = sibling.first.indexes[i];
+    currNode.first.usedIndexes = order * 2;
+
+    if (parent.first.childrenNodesNumbers[1] == currNode.second)
+        std::sort(currNode.first.indexes.begin(), currNode.first.indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
+                  { return ri1.index < ri2.index; });
     // not in leaf update child nodes
     if (mergePerformed)
     {
-    }
+        std::vector<size_t> childNodeIndexes;
+        for (size_t i = 0; i < order; i++)
+            childNodeIndexes.push_back(currNode.first.childrenNodesNumbers[i]);
+        // currNode on the right
+        if (parent.first.childrenNodesNumbers[1] == currNode.second)
+            for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
+                childNodeIndexes.emplace(childNodeIndexes.begin() + i, sibling.first.childrenNodesNumbers[i]);
+        // on the left
+        else
+            for (size_t i = 0; i < sibling.first.usedIndexes + 1; i++)
+                childNodeIndexes.push_back(sibling.first.childrenNodesNumbers[i]);
+        currNode.first.childrenNodesNumbers = childNodeIndexes;
 
+        ChangeParents(sibling.first, currNode.second);
+    }
+    currNode.first.parentNodeNum = NO_PARENT;
+    rootNodeNum = currNode.second;
+    FileManager::GetInstance().UpdateNode(currNode.first, currNode.second);
+    Cache::GetInstance().SetSize(height + 1);
+    Cache::GetInstance().Push(parent); // put it back for PostDeletionFix
+    ClearNode(parent);
+    ClearNode(sibling);
     mergePerformed = false;
 }
 
@@ -834,9 +864,26 @@ void BTree::ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, Reco
         replacement = FindReplacement(rightChild, currNode.childrenNodesNumbers[pos + 1], RIGHT);
 
     currNode.indexes[pos] = replacement;
-
     FileManager::GetInstance().UpdateNode(currNode, nodeNumber);
 
+    // the starting node needs to also be updated in cache to
+    // aboid an unnessesery read
+    std::stack<std::pair<Node, size_t>> tmp;
+    std::pair<Node, size_t> currCachedNode = Cache::GetInstance().Pop();
+    while (currCachedNode.second != nodeNumber)
+    {
+        tmp.push(currCachedNode);
+        currCachedNode = Cache::GetInstance().Pop();
+    }
+    Cache::GetInstance().Push(currNode, nodeNumber);
+    while (!tmp.empty())
+    {
+
+        currCachedNode = tmp.top();
+        tmp.pop();
+        Cache::GetInstance().Push(currCachedNode);
+    }
+    
     // the path to the node with replacement was cached
     // so it is the last node that we visited
     auto node = Cache::GetInstance().GetLast();
@@ -915,6 +962,7 @@ void BTree::DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordInde
     }
     FileManager::GetInstance().UpdateNode(node, nodeNumber);
     // insert back to cache for eventual fix
+    Cache::GetInstance().Pop();
     Cache::GetInstance().Push(node, nodeNumber);
     // we are in root and there is only root in the tree
     if (node.parentNodeNum == NO_PARENT)
@@ -924,7 +972,7 @@ void BTree::DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordInde
         {
             height--;
             rootNodeNum = NO_ROOT;
-            Cache::GetInstance().SetSize(height);
+            Cache::GetInstance().SetSize(height + 1);
         }
         return;
     }

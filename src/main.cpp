@@ -23,6 +23,8 @@ int main()
     rd.value = "abc";
 
     BTree::GetInstance().Add(rd);
+    BTree::GetInstance().Delete(46);
+
     rd.index = 6;
     BTree::GetInstance().Add(rd);
     rd.index = 32;
@@ -31,10 +33,14 @@ int main()
     BTree::GetInstance().Add(rd);
     rd.index = 15;
     BTree::GetInstance().Add(rd);
+
+    BTree::GetInstance().Delete(15);
+
     rd.index = 12;
     BTree::GetInstance().Add(rd);
     rd.index = 14;
     BTree::GetInstance().Add(rd);
+
     rd.index = 50;
     BTree::GetInstance().Add(rd);
     rd.index = 13;
