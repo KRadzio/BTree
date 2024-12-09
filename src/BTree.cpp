@@ -528,6 +528,7 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
             FileManager::GetInstance().UpdateNode(node, sibling.first.childrenNodesNumbers[0]);
             for (size_t i = 0; i < sibling.first.usedIndexes - 1; i++)
                 sibling.first.childrenNodesNumbers[i] = sibling.first.childrenNodesNumbers[i + 1];
+            sibling.first.childrenNodesNumbers[sibling.first.usedIndexes] = NO_CHILDREN;    
         }
     }
     else // rotate right
@@ -550,6 +551,7 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
             auto node = FileManager::GetInstance().GetNode(currNode.first.childrenNodesNumbers[0]);
             node.parentNodeNum = currNode.second;
             FileManager::GetInstance().UpdateNode(node, currNode.first.childrenNodesNumbers[0]);
+            sibling.first.childrenNodesNumbers[sibling.first.usedIndexes] = NO_CHILDREN;
         }
     }
     currNode.first.usedIndexes++;
@@ -787,7 +789,7 @@ void BTree::MergeRoot(std::pair<Node, size_t> &currNode, std::pair<Node, size_t>
         std::sort(currNode.first.indexes.begin(), currNode.first.indexes.end(), [](const RecordIndex &ri1, const RecordIndex &ri2)
                   { return ri1.index < ri2.index; });
     // not in leaf update child nodes
-    if (mergePerformed)
+    if (mergePerformed && height > 1)
     {
         std::vector<size_t> childNodeIndexes;
         for (size_t i = 0; i < order; i++)
