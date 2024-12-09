@@ -14,12 +14,6 @@
 #define LEFT 1
 #define RIGHT 2
 
-// nodes may not be needed as separate class
-// they are stored in text file
-// data is also stored in another file
-
-// cache for height + 1 pages
-
 class BTree
 {
 public:

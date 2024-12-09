@@ -19,27 +19,6 @@
 #define INT32_MAX_LENGTH 10 // max int32 length in digits
 #define INT64_MAX_LENGTH 20 // max int64 length in digit
 #define EMPTY_NODE 0
-// data is stored in pages
-// pages have their number
-// key -> value of each of the elements
-// if empty then use some special value (0 / NULL or something)
-// index file contains pages of BTree (nodes)
-// pointers to child nodes
-// keys and page number in data file
-// maybe a page num in index file
-
-// Index file page structure
-// header (parent number, number of free places)
-// pointer to child (0 for null)
-// key - page number in data
-// the higher the d the longer the page will be
-
-// Data file page structure
-// header (number of indexes in page)
-// key value
-// page size ~ 100 records may be good
-
-// pages are indexed from 1
 
 class FileManager
 {
@@ -62,7 +41,6 @@ public:
     // Index file operations
     Node GetNode(size_t nodeNumber); // get node that has a number
     // if any space can be reused then reuse it else create new
-    // REMEMBER TO FILL THE NODE CORRECTLY
     size_t InsertNewNode(Node &node);
     void UpdateNode(Node &node, size_t nodeNumber); // update node in file
 
