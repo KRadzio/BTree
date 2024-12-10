@@ -30,6 +30,7 @@ private:
 private:
     Displayer();
     ~Displayer();
+
 };
 
 #endif

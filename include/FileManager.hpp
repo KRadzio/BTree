@@ -28,6 +28,8 @@ public:
     // settings
     void ClearBothFiles(); // clear index file and data file
     void ResetReadsAndWrites();
+    void ResetDataReadsAndWrites();
+    void ResetTotalIndexReadsAndWrites();
     // we need to know the node size to read the index file
     // after calling it the tree will be basicly reseted
     void SetNodeSize(unsigned int nodeSize); 
@@ -37,6 +39,8 @@ public:
     inline size_t GetDataWrites() { return dataWrites; }
     inline size_t GetIndexReads() { return indexReads; }
     inline size_t GetIndexWrites() { return indexWrites; }
+    inline size_t GetTotalIndexReads() { return totalIndexReads; }
+    inline size_t GetTotalIndexWrites() { return totalIndexWrites; }
 
     // Index file operations
     Node GetNode(size_t nodeNumber); // get node that has a number
@@ -68,5 +72,7 @@ private:
     size_t dataReads = 0;
     size_t indexWrites = 0;
     size_t indexReads = 0;
+    size_t totalIndexReads = 0;
+    size_t totalIndexWrites = 0;
 };
 #endif

@@ -27,11 +27,37 @@ void BTree::SetOrder(unsigned int order)
     keysNumber = 0;
     nodePassedUp = false;
     mergePerformed = false;
+    searchReads = 0;
+    addReads = 0;
+    deleteReads = 0;
+    addWrites = 0;
+    deleteWrites = 0;
+    FileManager::GetInstance().ResetDataReadsAndWrites();
     FileManager::GetInstance().ResetReadsAndWrites();
+    FileManager::GetInstance().ResetTotalIndexReadsAndWrites();
     FileManager::GetInstance().ClearBothFiles();
 }
 
-bool BTree::Search(size_t key, bool clearCache)
+void BTree::Clear()
+{
+    height = 0;
+    Cache::GetInstance().SetSize(height + 1);
+    rootNodeNum = 0;
+    keysNumber = 0;
+    nodePassedUp = false;
+    mergePerformed = false;
+    searchReads = 0;
+    addReads = 0;
+    deleteReads = 0;
+    addWrites = 0;
+    deleteWrites = 0;
+    FileManager::GetInstance().ResetDataReadsAndWrites();
+    FileManager::GetInstance().ResetReadsAndWrites();
+    FileManager::GetInstance().ResetTotalIndexReadsAndWrites();
+    FileManager::GetInstance().ClearBothFiles();
+}
+
+bool BTree::Search(size_t key, bool clearCache, bool clearReadsAndWrites)
 {
     if (rootNodeNum == NO_ROOT) // BTree is empty
         return false;
@@ -41,15 +67,18 @@ bool BTree::Search(size_t key, bool clearCache)
     bool found = SearchRecursive(currNodeNum, key);
     if (clearCache) // in insert we do not want this
         Cache::GetInstance().ClearCache();
+    searchReads += FileManager::GetInstance().GetIndexReads();
+    if (clearReadsAndWrites)
+        FileManager::GetInstance().ResetReadsAndWrites();
     return found;
 }
 
-void BTree::Add(RecordData &rd)
+void BTree::Add(RecordData &rd, bool clearReadsAndWrites)
 {
     // invalid input will not be alowed
     if (rd.index == INVALID_INDEX || rd.value == EMPTY_RECORD || rd.value.length() > VALUE_MAX_LENGTH)
         return;
-    if (Search(rd.index, false))
+    if (Search(rd.index, false, clearReadsAndWrites))
         Cache::GetInstance().ClearCache();
     else
     {
@@ -58,6 +87,9 @@ void BTree::Add(RecordData &rd)
             CreateRootNode(rd);
             Cache::GetInstance().ClearCache();
             keysNumber++;
+            addReads += FileManager::GetInstance().GetIndexReads();
+            addWrites += FileManager::GetInstance().GetIndexWrites();
+            FileManager::GetInstance().ResetReadsAndWrites();
             return;
         }
         RecordIndex ri;
@@ -66,14 +98,18 @@ void BTree::Add(RecordData &rd)
         AddRecursive(ri);
         Cache::GetInstance().ClearCache();
         keysNumber++;
+        addReads += FileManager::GetInstance().GetIndexReads();
+        addWrites += FileManager::GetInstance().GetIndexWrites();
+        if (clearReadsAndWrites)
+            FileManager::GetInstance().ResetReadsAndWrites();
     }
 }
 
-void BTree::Delete(size_t key)
+void BTree::Delete(size_t key, bool clearReadsAndWrites)
 {
     if (key == INVALID_INDEX)
         return;
-    if (!Search(key, false))
+    if (!Search(key, false, clearReadsAndWrites))
         Cache::GetInstance().ClearCache();
     else
     {
@@ -107,14 +143,18 @@ void BTree::Delete(size_t key)
             ReplaceAndDelete(node.first, node.second, pos, ri);
         Cache::GetInstance().ClearCache();
         keysNumber--;
+        deleteReads += FileManager::GetInstance().GetIndexReads();
+        deleteWrites += FileManager::GetInstance().GetIndexWrites();
+        if (clearReadsAndWrites)
+            FileManager::GetInstance().ResetReadsAndWrites();
     }
 }
 
-void BTree::Update(RecordData &rd)
+void BTree::Update(RecordData &rd, bool clearReadsAndWrites)
 {
     if (rd.index == INVALID_INDEX)
         return;
-    if (!Search(rd.index, false))
+    if (!Search(rd.index, false, clearReadsAndWrites))
         Cache::GetInstance().ClearCache();
     else
     {
@@ -134,8 +174,11 @@ void BTree::Update(RecordData &rd)
                 break;
             }
         FileManager::GetInstance().UpdateDataPage(node.first.indexes[pos].pageNumber, dataPage);
-        Cache::GetInstance().ClearCache();
+        if (clearReadsAndWrites)
+            Cache::GetInstance().ClearCache();
     }
+    if (clearReadsAndWrites)
+        FileManager::GetInstance().ResetReadsAndWrites();
 }
 
 bool BTree::SearchRecursive(size_t currNodeNum, size_t key)

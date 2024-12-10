@@ -22,22 +22,32 @@ void FileManager::ClearBothFiles()
 
 void FileManager::ResetReadsAndWrites()
 {
-    dataReads = 0;
-    dataWrites = 0;
     indexReads = 0;
     indexWrites = 0;
+}
+
+void FileManager::ResetDataReadsAndWrites()
+{
+    dataReads = 0;
+    dataWrites = 0;
+}
+void FileManager::ResetTotalIndexReadsAndWrites()
+{
+    totalIndexReads = 0;
+    totalIndexWrites = 0;
 }
 
 void FileManager::SetNodeSize(unsigned int nodeSize)
 {
     this->nodeSize = nodeSize;
     ResetReadsAndWrites();
-   // ClearBothFiles(); // later uncomment
+    // ClearBothFiles(); // later uncomment
 }
 
 Node FileManager::GetNode(size_t nodeNumber)
 {
     indexReads++;
+    totalIndexReads++;
     std::string line;
     std::ifstream file;
     Node n;
@@ -86,6 +96,7 @@ Node FileManager::GetNode(size_t nodeNumber)
 size_t FileManager::InsertNewNode(Node &node)
 {
     indexReads++;
+    totalIndexReads++;
     std::string line;
     std::fstream file;
     file.open(INDEX_FILE, std::ios_base::out | std::ios_base::in);
@@ -119,6 +130,7 @@ size_t FileManager::InsertNewNode(Node &node)
 void FileManager::UpdateNode(Node &node, size_t nodeNumber)
 {
     indexWrites++;
+    totalIndexWrites++;
     // remember to push elements to queue
     std::string line;
     std::fstream file;
@@ -240,6 +252,7 @@ DataPage FileManager::GetDataPage(size_t pageNum)
 void FileManager::CreateNewNode(Node &node)
 {
     indexWrites++;
+    totalIndexWrites++;
     std::fstream file;
     file.open(INDEX_FILE, std::ios_base::app | std::ios_base::out);
     WriteNode(node, file);
