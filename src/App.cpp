@@ -2,9 +2,6 @@
 
 App::App()
 {
-    std::ofstream file;
-    file.open(OUTPUT_FILE, std::ios_base::trunc);
-    file.close();
     BTree::GetInstance().SetOrder(DEFAULT_BTREE_ORDER);
     initscr();
     getmaxyx(stdscr, height, width);
@@ -13,6 +10,7 @@ App::App()
     raw();
     noecho();
     curs_set(0);
+    Displayer::GetInstance().SetWindow(window);
 }
 App::~App() {}
 
@@ -24,7 +22,12 @@ App &App::GetInstance()
 
 void App::Experiment()
 {
+    std::ofstream file;
+    file.open(OUTPUT_FILE, std::ios_base::trunc);
+    file.close();
     srand(time(NULL));
+    wclear(window);
+    wrefresh(window);
 
     std::vector<size_t> numberOfRecords = {20, 50, 100, 200, 500, 1000, 10000};
 
@@ -36,6 +39,9 @@ void App::Experiment()
         TestTree(numberOfRecords[i], 50);
         TestTree(numberOfRecords[i], 100);
     }
+    wprintw(window, "Press any key to continue\n");
+    wrefresh(window);
+    wgetch(window);
 }
 
 void App::MainLoop()
@@ -52,6 +58,7 @@ void App::MainLoop()
         wprintw(window, "p) Print BTree\n");
         wprintw(window, "d) Print data file\n");
         wprintw(window, "o) Set BTree order\n");
+        wprintw(window, "r) Reset BTree\n");
         wprintw(window, "e) Experiment\n");
         wprintw(window, "q) Quit\n");
         wrefresh(window);
@@ -92,6 +99,10 @@ void App::MainLoop()
             break;
         case 0x71:
             run = false;
+            break;
+        case 0x72:
+            BTree::GetInstance().Clear();
+            wclear(window);
             break;
         case 0x65:
             Experiment();
@@ -180,6 +191,8 @@ void App::TestTree(size_t number, unsigned int order)
     file.close();
 }
 
+// CODE DUPLICATION THAT CAN BE CHANGED
+
 void App::AddRecord()
 {
     wclear(window);
@@ -199,20 +212,22 @@ void App::AddRecord()
             curs_set(1);
             echo();
             wgetstr(window, buff);
-            curs_set(0);
             line = buff;
             rd.index = std::stoul(line);
             wgetstr(window, buff);
             rd.value = buff;
+            curs_set(0);
             noecho();
             BTree::GetInstance().Add(rd, false);
             c = 0x1B;
             break;
+        case 0x1B:
+            return;
         default:
             wclear(window);
             break;
         }
-        wprintw(window, "Reads(including searcg): %lu, writes: %lu\n", FileManager::GetInstance().GetIndexReads(), FileManager::GetInstance().GetIndexWrites());
+        wprintw(window, "Reads(including search): %lu, writes: %lu\n", FileManager::GetInstance().GetIndexReads(), FileManager::GetInstance().GetIndexWrites());
         wprintw(window, "Press any key to continue\n");
         wrefresh(window);
         wgetch(window);
@@ -220,9 +235,134 @@ void App::AddRecord()
         FileManager::GetInstance().ResetReadsAndWrites();
     }
 }
-void App::SearchRecord() {}
-void App::UpdateValue() {}
-void App::DeleteRecord() {}
+
+void App::SearchRecord()
+{
+    wclear(window);
+    char c = 0x00;
+    size_t key;
+    bool found = false;
+    char buff[100];
+    std::string line;
+    while (c != 0x1B)
+    {
+        wprintw(window, "1) Insert index\n");
+        wprintw(window, "ESC) Quit\n");
+        wrefresh(window);
+        c = wgetch(window);
+        switch (c)
+        {
+        case 0x31:
+            curs_set(1);
+            echo();
+            wgetstr(window, buff);
+            line = buff;
+            key = std::stoul(line);
+            curs_set(0);
+            noecho();
+            found = BTree::GetInstance().Search(key, true, false);
+            c = 0x1B;
+            break;
+        case 0x1B:
+            return;
+        default:
+            wclear(window);
+            break;
+        }
+        wprintw(window, "Index found %d\n", (int)found);
+        wprintw(window, "Reads: %lu\n", FileManager::GetInstance().GetIndexReads());
+        wprintw(window, "Press any key to continue\n");
+        wrefresh(window);
+        wgetch(window);
+        wclear(window);
+        FileManager::GetInstance().ResetReadsAndWrites();
+    }
+}
+
+void App::UpdateValue()
+{
+    wclear(window);
+    char c = 0x00;
+    RecordData rd;
+    char buff[100];
+    std::string line;
+    while (c != 0x1B)
+    {
+        wprintw(window, "1) Insert index and new value\n");
+        wprintw(window, "ESC) Quit\n");
+        wrefresh(window);
+        c = wgetch(window);
+        switch (c)
+        {
+        case 0x31:
+            curs_set(1);
+            echo();
+            wgetstr(window, buff);
+            line = buff;
+            rd.index = std::stoul(line);
+            wgetstr(window, buff);
+            rd.value = buff;
+            curs_set(0);
+            noecho();
+            BTree::GetInstance().Update(rd, false);
+            c = 0x1B;
+            break;
+        case 0x1B:
+            return;
+        default:
+            wclear(window);
+            break;
+        }
+        wprintw(window, "Reads: %lu\n", FileManager::GetInstance().GetIndexReads());
+        wprintw(window, "Press any key to continue\n");
+        wrefresh(window);
+        wgetch(window);
+        wclear(window);
+        FileManager::GetInstance().ResetReadsAndWrites();
+    }
+}
+
+void App::DeleteRecord()
+{
+    wclear(window);
+    char c = 0x00;
+    size_t key;
+    char buff[100];
+    std::string line;
+    while (c != 0x1B)
+    {
+        wprintw(window, "1) Insert index\n");
+        wprintw(window, "ESC) Quit\n");
+        wrefresh(window);
+        c = wgetch(window);
+        switch (c)
+        {
+        case 0x31:
+            curs_set(1);
+            echo();
+            wgetstr(window, buff);
+            line = buff;
+            key = std::stoul(line);
+            curs_set(0);
+            noecho();
+            BTree::GetInstance().Delete(key, false);
+            c = 0x1B;
+            break;
+        case 0x1B:
+            return;
+        default:
+            wclear(window);
+            break;
+        }
+        wprintw(window, "Reads(including search): %lu, writes: %lu\n", FileManager::GetInstance().GetIndexReads(), FileManager::GetInstance().GetIndexWrites());
+        wprintw(window, "Press any key to continue\n");
+        wrefresh(window);
+        wgetch(window);
+        wclear(window);
+        FileManager::GetInstance().ResetReadsAndWrites();
+    }
+}
+
 void App::ReadFromFile()
 {
     wclear(window);
@@ -248,13 +388,60 @@ void App::ReadFromFile()
             wclear(window);
             c = 0x1B;
             break;
+        case 0x1B:
+            return;
         default:
             wclear(window);
             break;
         }
     }
+    wprintw(window, "Press any key to continue\n");
+    wrefresh(window);
+    wgetch(window);
+    wclear(window);
+    FileManager::GetInstance().ResetReadsAndWrites();
 }
-void App::SetOrder() {}
+
+void App::SetOrder()
+{
+    wclear(window);
+    char c = 0x00;
+    size_t order;
+    char buff[100];
+    std::string line;
+    while (c != 0x1B)
+    {
+        wprintw(window, "1) Insert new order\n");
+        wprintw(window, "ESC) Quit\n");
+        wrefresh(window);
+        c = wgetch(window);
+        switch (c)
+        {
+        case 0x31:
+            curs_set(1);
+            echo();
+            wgetstr(window, buff);
+            line = buff;
+            order = std::stoul(line);
+            curs_set(0);
+            noecho();
+            BTree::GetInstance().SetOrder(order);
+            c = 0x1B;
+            break;
+        case 0x1B:
+            return;
+        default:
+            wclear(window);
+            break;
+        }
+        wprintw(window, "New order set\n");
+        wprintw(window, "Press any key to continue\n");
+        wrefresh(window);
+        wgetch(window);
+        wclear(window);
+        FileManager::GetInstance().ResetReadsAndWrites();
+    }
+}
 
 void App::ParseInputFile(std::string filepath)
 {

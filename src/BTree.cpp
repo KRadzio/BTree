@@ -89,7 +89,8 @@ void BTree::Add(RecordData &rd, bool clearReadsAndWrites)
             keysNumber++;
             addReads += FileManager::GetInstance().GetIndexReads();
             addWrites += FileManager::GetInstance().GetIndexWrites();
-            FileManager::GetInstance().ResetReadsAndWrites();
+            if (clearReadsAndWrites)
+                FileManager::GetInstance().ResetReadsAndWrites();
             return;
         }
         RecordIndex ri;

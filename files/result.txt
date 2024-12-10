@@ -1,0 +1,105 @@
+Records: 20
+Order: 2 Reads: 97 Writes: 85
+Average search reads 1.75 Average add reads 0.85 Average add writes 1.9 Average delete reads 0.5 Average delete writes 2.35
+Records: 20
+Order: 5 Reads: 65 Writes: 51
+Average search reads 1.425 Average add reads 0.2 Average add writes 1.2 Average delete reads 0.2 Average delete writes 1.35
+Records: 20
+Order: 10 Reads: 40 Writes: 40
+Average search reads 0.975 Average add reads 0.05 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 20
+Order: 50 Reads: 40 Writes: 40
+Average search reads 0.975 Average add reads 0.05 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 20
+Order: 100 Reads: 40 Writes: 40
+Average search reads 0.975 Average add reads 0.05 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 50
+Order: 2 Reads: 360 Writes: 268
+Average search reads 2.43 Average add reads 1.14 Average add writes 2.22 Average delete reads 1.2 Average delete writes 3.14
+Records: 50
+Order: 5 Reads: 210 Writes: 156
+Average search reads 1.76 Average add reads 0.38 Average add writes 1.48 Average delete reads 0.3 Average delete writes 1.64
+Records: 50
+Order: 10 Reads: 173 Writes: 127
+Average search reads 1.58 Average add reads 0.12 Average add writes 1.12 Average delete reads 0.18 Average delete writes 1.42
+Records: 50
+Order: 50 Reads: 100 Writes: 100
+Average search reads 0.99 Average add reads 0.02 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 50
+Order: 100 Reads: 100 Writes: 100
+Average search reads 0.99 Average add reads 0.02 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 100
+Order: 2 Reads: 867 Writes: 546
+Average search reads 2.845 Average add reads 1.72 Average add writes 2.81 Average delete reads 1.26 Average delete writes 2.65
+Records: 100
+Order: 5 Reads: 488 Writes: 360
+Average search reads 1.845 Average add reads 0.59 Average add writes 1.64 Average delete reads 0.6 Average delete writes 1.96
+Records: 100
+Order: 10 Reads: 464 Writes: 340
+Average search reads 1.765 Average add reads 0.72 Average add writes 1.78 Average delete reads 0.39 Average delete writes 1.62
+Records: 100
+Order: 50 Reads: 200 Writes: 200
+Average search reads 0.995 Average add reads 0.01 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 100
+Order: 100 Reads: 200 Writes: 200
+Average search reads 0.995 Average add reads 0.01 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 200
+Order: 2 Reads: 1903 Writes: 983
+Average search reads 3.48 Average add reads 1.68 Average add writes 2.7 Average delete reads 0.875 Average delete writes 2.215
+Records: 200
+Order: 5 Reads: 1290 Writes: 798
+Average search reads 2.4275 Average add reads 1.075 Average add writes 2.105 Average delete reads 0.52 Average delete writes 1.885
+Records: 200
+Order: 10 Reads: 952 Writes: 676
+Average search reads 1.8875 Average add reads 0.655 Average add writes 1.69 Average delete reads 0.33 Average delete writes 1.69
+Records: 200
+Order: 50 Reads: 637 Writes: 480
+Average search reads 1.495 Average add reads 0.165 Average add writes 1.31 Average delete reads 0.03 Average delete writes 1.09
+Records: 200
+Order: 100 Reads: 400 Writes: 400
+Average search reads 0.9975 Average add reads 0.005 Average add writes 1 Average delete reads 0 Average delete writes 1
+Records: 500
+Order: 2 Reads: 5385 Writes: 2391
+Average search reads 4.078 Average add reads 1.73 Average add writes 2.824 Average delete reads 0.884 Average delete writes 1.958
+Records: 500
+Order: 5 Reads: 3649 Writes: 1884
+Average search reads 2.818 Average add reads 1.008 Average add writes 2.024 Average delete reads 0.654 Average delete writes 1.744
+Records: 500
+Order: 10 Reads: 2940 Writes: 1831
+Average search reads 2.279 Average add reads 0.886 Average add writes 1.876 Average delete reads 0.436 Average delete writes 1.786
+Records: 500
+Order: 50 Reads: 2146 Writes: 1492
+Average search reads 1.791 Average add reads 0.48 Average add writes 1.568 Average delete reads 0.23 Average delete writes 1.416
+Records: 500
+Order: 100 Reads: 1651 Writes: 1090
+Average search reads 1.597 Average add reads 0.038 Average add writes 1.064 Average delete reads 0.07 Average delete writes 1.116
+Records: 1000
+Order: 2 Reads: 11868 Writes: 4761
+Average search reads 4.576 Average add reads 1.666 Average add writes 2.729 Average delete reads 1.05 Average delete writes 2.032
+Records: 1000
+Order: 5 Reads: 7647 Writes: 3988
+Average search reads 2.8755 Average add reads 1.154 Average add writes 2.144 Average delete reads 0.742 Average delete writes 1.844
+Records: 1000
+Order: 10 Reads: 6737 Writes: 3665
+Average search reads 2.648 Average add reads 0.958 Average add writes 1.952 Average delete reads 0.483 Average delete writes 1.713
+Records: 1000
+Order: 50 Reads: 4555 Writes: 3206
+Average search reads 1.896 Average add reads 0.403 Average add writes 1.45 Average delete reads 0.36 Average delete writes 1.756
+Records: 1000
+Order: 100 Reads: 4293 Writes: 2947
+Average search reads 1.798 Average add reads 0.536 Average add writes 1.624 Average delete reads 0.161 Average delete writes 1.323
+Records: 10000
+Order: 2 Reads: 150150 Writes: 37103
+Average search reads 6.37445 Average add reads 1.6967 Average add writes 2.7826 Average delete reads 0.5694 Average delete writes 0.9277
+Records: 10000
+Order: 5 Reads: 98896 Writes: 35283
+Average search reads 4.0509 Average add reads 1.1919 Average add writes 2.2252 Average delete reads 0.5959 Average delete writes 1.3031
+Records: 10000
+Order: 10 Reads: 84404 Writes: 33741
+Average search reads 3.4732 Average add reads 1.0291 Average add writes 2.022 Average delete reads 0.4649 Average delete writes 1.3521
+Records: 10000
+Order: 50 Reads: 56737 Writes: 35127
+Average search reads 2.2243 Average add reads 0.9045 Average add writes 1.9042 Average delete reads 0.3206 Average delete writes 1.6085
+Records: 10000
+Order: 100 Reads: 52561 Writes: 36271
+Average search reads 1.97795 Average add reads 0.9452 Average add writes 1.9524 Average delete reads 0.355 Average delete writes 1.6747

@@ -22,6 +22,7 @@ public:
 
     void DiplayTree();
     void DiplayData();
+    inline void SetWindow(WINDOW * window) {this->window = window;}
 
 private:
     void DiplayRecursive(size_t currHeight);
@@ -30,6 +31,8 @@ private:
 private:
     Displayer();
     ~Displayer();
+private:
+    WINDOW * window;
 
 };
 
