@@ -22,8 +22,11 @@ void BTree::SetOrder(unsigned int order)
     this->order = order;
     FileManager::GetInstance().SetNodeSize(order * 2);
     height = 0;
+    Cache::GetInstance().SetSize(height + 1);
     rootNodeNum = 0;
+    keysNumber = 0;
     nodePassedUp = false;
+    mergePerformed = false;
     FileManager::GetInstance().ClearBothFiles();
 }
 
@@ -60,6 +63,7 @@ void BTree::Add(RecordData &rd)
         ri.pageNumber = FileManager::GetInstance().InsertNewRecord(rd);
         AddRecursive(ri);
         Cache::GetInstance().ClearCache();
+        keysNumber++;
     }
 }
 
@@ -100,6 +104,7 @@ void BTree::Delete(size_t key)
         else
             ReplaceAndDelete(node.first, node.second, pos, ri);
         Cache::GetInstance().ClearCache();
+        keysNumber--;
     }
 }
 
@@ -190,17 +195,18 @@ void BTree::PostDeletionFix()
     {
         // we are in root and root can have less then x = order number of records
         if (currNode.first.parentNodeNum == NO_PARENT)
+        {
+            mergePerformed = false;
             return;
+        }
         // there may be an extra read
         if (!TryCompensateDeletion(currNode))
         {
             Merge(currNode);
             PostDeletionFix();
         }
-        else // reset flag after succesful compensation
-            mergePerformed = false;
     }
-    else // reset flag after fixing
+    else
         mergePerformed = false;
 }
 
@@ -524,11 +530,11 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
             // first move to currNode then move children in sibling
             currNode.first.childrenNodesNumbers[currNode.first.usedIndexes + 1] = sibling.first.childrenNodesNumbers[0];
             auto node = FileManager::GetInstance().GetNode(sibling.first.childrenNodesNumbers[0]);
-            node.parentNodeNum = sibling.second;
+            node.parentNodeNum = currNode.second;
             FileManager::GetInstance().UpdateNode(node, sibling.first.childrenNodesNumbers[0]);
-            for (size_t i = 0; i < sibling.first.usedIndexes - 1; i++)
+            for (size_t i = 0; i <= sibling.first.usedIndexes - 1; i++)
                 sibling.first.childrenNodesNumbers[i] = sibling.first.childrenNodesNumbers[i + 1];
-            sibling.first.childrenNodesNumbers[sibling.first.usedIndexes] = NO_CHILDREN;    
+            sibling.first.childrenNodesNumbers[sibling.first.usedIndexes] = NO_CHILDREN;
         }
     }
     else // rotate right
@@ -558,11 +564,13 @@ void BTree::CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, in
     sibling.first.usedIndexes--;
     sibling.first.indexes[sibling.first.usedIndexes].index = INVALID_INDEX;
     sibling.first.indexes[sibling.first.usedIndexes].pageNumber = INVALID_PAGE;
-    if (mergePerformed)
-        mergePerformed = false;
+    mergePerformed = false;
     FileManager::GetInstance().UpdateNode(currNode.first, currNode.second);
     FileManager::GetInstance().UpdateNode(parent.first, parent.second);
     FileManager::GetInstance().UpdateNode(sibling.first, sibling.second);
+    // parent was updated
+    Cache::GetInstance().Pop();
+    Cache::GetInstance().Push(parent);
 }
 
 void BTree::Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri)

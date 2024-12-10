@@ -27,6 +27,9 @@ public:
     void Update(RecordData &rd);
 
     inline size_t GetRootNum() { return rootNodeNum; }
+    inline size_t GetKeysNumber() { return keysNumber; }
+    inline unsigned int GetOrder() { return order; }
+    inline unsigned int GetHeight() { return height; }
 
     // helper functions
 private:
@@ -58,6 +61,7 @@ private:
     ~BTree();
 
 private:
+    size_t keysNumber = 0;
     size_t rootNodeNum = 0;
     unsigned int height = 0;                  // by default
     unsigned int order = DEFAULT_BTREE_ORDER; // by default

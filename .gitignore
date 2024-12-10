@@ -3,3 +3,7 @@ bin/proj
 build.sh
 .vscode/settings.json
 files/indexbackup.txt
+files/add.txt
+files/data.txt
+files/delete.txt
+files/indexfile.txt

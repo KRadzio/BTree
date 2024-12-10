@@ -2,3 +2,9 @@
 
 Displayer::Displayer(){}
 Displayer::~Displayer(){}
+
+Displayer& Displayer::GetInstance()
+{
+    static Displayer* instance = new Displayer;
+    return *instance;
+}
