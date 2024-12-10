@@ -44,3 +44,22 @@ void Cache::ClearCache()
     while (!cachedNodes.empty())
         cachedNodes.pop();
 }
+
+DataPage &Cache::GetDataPage(size_t pageNumber) {
+    for(size_t i=0; i<dataPagePos; i++)
+    {
+        if(dataPagesCached[i].second == pageNumber)
+            return dataPagesCached[i].first;
+    }
+    if(dataPagePos == MAX_DATAPAGES_CACHED)
+        dataPagePos = 0;
+    dataPagesCached[dataPagePos].first = FileManager::GetInstance().GetDataPage(pageNumber);
+    dataPagesCached[dataPagePos].second = pageNumber;
+    dataPagePos++; 
+    return dataPagesCached[dataPagePos-1].first;
+}
+void Cache::ClearDataCache()
+{
+    dataPagesCached.clear();
+    dataPagePos = 0;
+}

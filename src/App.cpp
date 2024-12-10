@@ -10,7 +10,7 @@ App::App()
     raw();
     noecho();
     curs_set(0);
-    Displayer::GetInstance().SetWindow(window);
+    Displayer::GetInstance().SetWindowAndDimensions(window,width, height);
 }
 App::~App() {}
 

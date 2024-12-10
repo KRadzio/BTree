@@ -8,6 +8,11 @@
 #include "Displayer.hpp"
 #include "BTree.hpp"
 
+// int log_a_to_base_b(int a, int b)
+// {
+    // return log2(a) / log2(b);
+// }
+
 #define OUTPUT_FILE "./files/result.txt"
 
 class App

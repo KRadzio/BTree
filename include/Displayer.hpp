@@ -5,12 +5,7 @@
 
 #include "BTree.hpp"
 
-// d - order
-// N - number of keys
-// logd(N)
-
-
-// log2d+1 (N+1) <= h <= logd+1 ((N+1)/2) + 1
+#define NODE_WIDTH 35 // this will break when tree gets larger (the tree may be unreadable) 
 
 // N / (2d) <= SIN  <= (N-1)/d + 1
 // and the maximum number of disk access needed is T E = SIN + N. 
@@ -22,17 +17,23 @@ public:
 
     void DiplayTree();
     void DiplayData();
-    inline void SetWindow(WINDOW * window) {this->window = window;}
+    void SetWindowAndDimensions(WINDOW * window, int width, int height); 
 
 private:
-    void DiplayRecursive(size_t currHeight);
-    void DisplayDataRecursive();
+    void DisplayTreeRecursive(size_t currHeight, size_t currNodeNumber);
+    void DisplayDataRecursive(size_t currNodeNumber);
+    void DisplayNode(Node& node, size_t nodeNumber, size_t height);
+    void DisplayDataFromNode(Node& node, size_t nodeNumber, size_t pos);
 
 private:
     Displayer();
     ~Displayer();
 private:
     WINDOW * window;
+    int height;
+    int width;
+    std::vector<int> horizontalOffsets;
+
 
 };
 
