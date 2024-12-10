@@ -27,6 +27,7 @@ void BTree::SetOrder(unsigned int order)
     keysNumber = 0;
     nodePassedUp = false;
     mergePerformed = false;
+    FileManager::GetInstance().ResetReadsAndWrites();
     FileManager::GetInstance().ClearBothFiles();
 }
 
@@ -56,6 +57,7 @@ void BTree::Add(RecordData &rd)
         {
             CreateRootNode(rd);
             Cache::GetInstance().ClearCache();
+            keysNumber++;
             return;
         }
         RecordIndex ri;

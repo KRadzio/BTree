@@ -320,5 +320,8 @@ void FileManager::FormatValue(std::string value, std::fstream &file)
     if (value.size() > 0)
         file << value;
     for (size_t i = 0; i < len; i++)
-        file << UNUSEDBYTE;
+    {
+        char c = UNUSEDBYTE;
+        file << c;
+    }
 }

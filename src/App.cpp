@@ -15,26 +15,40 @@ void App::Experiment(size_t numberOfRecords)
 {
     srand(time(NULL));
 
+    std::cout << "Records: " << numberOfRecords << std::endl;
     BTree::GetInstance().SetOrder(2);
     AddRecords(numberOfRecords);
     DeleteRecords(numberOfRecords);
+    std::cout << "Order: " << BTree::GetInstance().GetOrder() << " Reads: " << FileManager::GetInstance().GetIndexReads() << " Writes: " << FileManager::GetInstance().GetIndexWrites() << std::endl;
+
+    BTree::GetInstance().SetOrder(5);
+    AddRecords(numberOfRecords);
+    DeleteRecords(numberOfRecords);
+    std::cout << "Order: " << BTree::GetInstance().GetOrder() << " Reads: " << FileManager::GetInstance().GetIndexReads() << " Writes: " << FileManager::GetInstance().GetIndexWrites() << std::endl;
 
     BTree::GetInstance().SetOrder(10);
     AddRecords(numberOfRecords);
     DeleteRecords(numberOfRecords);
+    std::cout << "Order: " << BTree::GetInstance().GetOrder() << " Reads: " << FileManager::GetInstance().GetIndexReads() << " Writes: " << FileManager::GetInstance().GetIndexWrites() << std::endl;
 
     BTree::GetInstance().SetOrder(50);
     AddRecords(numberOfRecords);
     DeleteRecords(numberOfRecords);
+    std::cout << "Order: " << BTree::GetInstance().GetOrder() << " Reads: " << FileManager::GetInstance().GetIndexReads() << " Writes: " << FileManager::GetInstance().GetIndexWrites() << std::endl;
+
+    BTree::GetInstance().SetOrder(100);
+    AddRecords(numberOfRecords);
+    DeleteRecords(numberOfRecords);
+    std::cout << "Order: " << BTree::GetInstance().GetOrder() << " Reads: " << FileManager::GetInstance().GetIndexReads() << " Writes: " << FileManager::GetInstance().GetIndexWrites() << std::endl;
 }
 
 void App::AddRecords(size_t number)
 {
     RecordData rd;
     rd.value = "abc";
-    recordsInTree = std::vector<bool>(number) = {false};
-    std::ofstream file;
-    file.open("./files/add.txt");
+    recordsInTree = std::vector<bool>(number);
+    for(size_t i=0; i<number; i++)
+        recordsInTree[i] = false;
 
     for (size_t i = 0; i < number; i++)
     {
@@ -54,23 +68,18 @@ void App::AddRecords(size_t number)
                     break;
                 }
         }
-        file << rd.index << std::endl;
         BTree::GetInstance().Add(rd);
     }
-    file.close();
 }
 
 void App::DeleteRecords(size_t number)
 {
-    std::ofstream file;
-    file.open("./files/delete.txt");
     for (size_t i = 0; i < number; i++)
     {
         size_t randomNumber = (rand() % number) + 1;
         if (recordsInTree[randomNumber - 1] == true)
         {
             recordsInTree[randomNumber - 1] = false;
-            file << randomNumber << std::endl;
             BTree::GetInstance().Delete(randomNumber);
         }
         else
@@ -79,11 +88,9 @@ void App::DeleteRecords(size_t number)
                 if (recordsInTree[j] == true)
                 {
                     recordsInTree[j] = false;
-                    file << j + 1 << std::endl;
                     BTree::GetInstance().Delete(j + 1);
                     break;
                 }
         }
     }
-    file.close();
 }

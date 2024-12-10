@@ -8,6 +8,11 @@ int main()
     App::GetInstance().Experiment(20);
     App::GetInstance().Experiment(50);
     App::GetInstance().Experiment(100);
+    App::GetInstance().Experiment(200);
+    App::GetInstance().Experiment(500);
+    App::GetInstance().Experiment(1000);
+    App::GetInstance().Experiment(10000);
+
     // BTree::GetInstance().Init(2);
     // RecordData rd;
     // rd.value = "abc";
@@ -111,7 +116,6 @@ int main()
     // BTree::GetInstance().Delete(21);
     // BTree::GetInstance().Delete(23);
     // BTree::GetInstance().Delete(24);
-    
 
     return 0;
 }
