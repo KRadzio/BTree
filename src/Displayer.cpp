@@ -56,7 +56,9 @@ void Displayer::DisplayTreeRecursive(size_t currHeight, size_t currNodeNumber)
 {
     if (currHeight < BTree::GetInstance().GetHeight())
     {
-        auto node = FileManager::GetInstance().GetNode(currNodeNumber);
+        Node node;
+        if (currNodeNumber != INVALID_NODE)
+            node = FileManager::GetInstance().GetNode(currNodeNumber);
         Cache::GetInstance().Push(node, currNodeNumber);
         for (size_t i = 0; i <= BTree::GetInstance().GetOrder() * 2; i++)
         {
@@ -80,23 +82,25 @@ void Displayer::DisplayDataRecursive(size_t currNodeNumber)
         for (size_t i = 0; i <= BTree::GetInstance().GetOrder() * 2; i++)
         {
             DisplayDataRecursive(node.childrenNodesNumbers[i]);
-            
+
             if (i < BTree::GetInstance().GetOrder() * 2)
                 DisplayDataFromNode(node, currNodeNumber, i);
         }
-
     }
 }
 
 void Displayer::DisplayNode(Node &node, size_t nodeNumber, size_t height)
 {
-    mvwprintw(window, height * 2, horizontalOffsets[height - 1] * NODE_WIDTH, "<%lu>", nodeNumber);
-    mvwprintw(window, height * 2 + 1, horizontalOffsets[height - 1] * NODE_WIDTH, "%lu;", node.childrenNodesNumbers[0]);
-    for (size_t i = 0; i < BTree::GetInstance().GetOrder() * 2; i++)
+    if (nodeNumber != INVALID_NODE)
     {
-        wprintw(window, "(%lu);%lu;", node.indexes[i].index, node.childrenNodesNumbers[i + 1]);
+        mvwprintw(window, height * 2, horizontalOffsets[height - 1] * NODE_WIDTH, "<%lu>", nodeNumber);
+        mvwprintw(window, height * 2 + 1, horizontalOffsets[height - 1] * NODE_WIDTH, "%lu;", node.childrenNodesNumbers[0]);
+        for (size_t i = 0; i < BTree::GetInstance().GetOrder() * 2; i++)
+        {
+            wprintw(window, "(%lu);%lu;", node.indexes[i].index, node.childrenNodesNumbers[i + 1]);
+        }
+        wrefresh(window);
     }
-    wrefresh(window);
 }
 
 void Displayer::DisplayDataFromNode(Node &node, size_t nodeNumber, size_t pos)
