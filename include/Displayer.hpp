@@ -23,7 +23,7 @@ private:
     void DisplayTreeRecursive(size_t currHeight, size_t currNodeNumber);
     void DisplayDataRecursive(size_t currNodeNumber);
     void DisplayNode(Node& node, size_t nodeNumber, size_t height);
-    void DisplayDataFromNode(Node& node, size_t nodeNumber, size_t pos);
+    void DisplayDataFromNode(Node& node, size_t pos);
 
 private:
     Displayer();

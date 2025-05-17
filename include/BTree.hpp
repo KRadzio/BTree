@@ -44,7 +44,7 @@ private:
     void AddToNode(Node &node, size_t nodeNumber, RecordIndex &ri);
     void CreateRootNode(RecordData &rd);
     bool TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
-    void Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction);
+    void Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction);
     bool TryCompensateDeletion(std::pair<Node, size_t> &currNode);
     void CompensateDeletion(std::pair<Node, size_t> &currNode, size_t pos, int direction);
     void Split(Node &currNode, size_t currNodeNumber, RecordIndex &ri);
@@ -56,9 +56,9 @@ private:
     void SetChildNodesIndexes(std::vector<size_t> &childNodesNumber, Node &dst1, Node &dst2, size_t mid);
     void FindNodePos(size_t &nodePos, std::pair<Node, size_t> &nodePassed, std::vector<RecordIndex> &indexes);
     size_t FindChildNodePos(std::pair<Node, size_t> &parent, size_t childNodeNumber);
-    void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex &ri);
+    void ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos);
     RecordIndex FindReplacement(Node &currNode, size_t nodeNumber, int direction);
-    void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex &ri);
+    void DeleteFromNode(Node &node, size_t nodeNumber, size_t pos);
     void ClearNode(std::pair<Node, size_t> &node);
 
 private:

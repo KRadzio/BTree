@@ -84,7 +84,7 @@ void Displayer::DisplayDataRecursive(size_t currNodeNumber)
             DisplayDataRecursive(node.childrenNodesNumbers[i]);
 
             if (i < BTree::GetInstance().GetOrder() * 2)
-                DisplayDataFromNode(node, currNodeNumber, i);
+                DisplayDataFromNode(node, i);
         }
     }
 }
@@ -103,7 +103,7 @@ void Displayer::DisplayNode(Node &node, size_t nodeNumber, size_t height)
     }
 }
 
-void Displayer::DisplayDataFromNode(Node &node, size_t nodeNumber, size_t pos)
+void Displayer::DisplayDataFromNode(Node &node, size_t pos)
 {
     if (node.indexes[pos].index == INVALID_INDEX)
         return;

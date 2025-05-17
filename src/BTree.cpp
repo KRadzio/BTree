@@ -138,10 +138,10 @@ void BTree::Delete(size_t key, bool clearReadsAndWrites)
             }
         // leaf
         if (node.first.childrenNodesNumbers[0] == NO_CHILDREN)
-            DeleteFromNode(node.first, node.second, pos, ri);
+            DeleteFromNode(node.first, node.second, pos);
         // not leaf
         else
-            ReplaceAndDelete(node.first, node.second, pos, ri);
+            ReplaceAndDelete(node.first, node.second, pos);
         Cache::GetInstance().ClearCache();
         keysNumber--;
         deleteReads += FileManager::GetInstance().GetIndexReads();
@@ -328,7 +328,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         else
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, currNodeNumber, pos, ri, RIGHT);
+            Compensate(currNode, currNodeNumber,  ri, RIGHT);
             return true;
         }
     }
@@ -341,7 +341,7 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         else
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, currNodeNumber, pos, ri, LEFT);
+            Compensate(currNode, currNodeNumber,  ri, LEFT);
             return true;
         }
     }
@@ -355,19 +355,19 @@ bool BTree::TryCompensate(Node &currNode, size_t currNodeNumber, RecordIndex &ri
         if (leftSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(leftSibling, parentNodePair.first.childrenNodesNumbers[pos - 1]);
-            Compensate(currNode, currNodeNumber, pos, ri, LEFT);
+            Compensate(currNode, currNodeNumber,  ri, LEFT);
             return true;
         }
         if (rightSibling.usedIndexes < order * 2)
         {
             Cache::GetInstance().Push(rightSibling, parentNodePair.first.childrenNodesNumbers[pos + 1]);
-            Compensate(currNode, currNodeNumber, pos, ri, RIGHT);
+            Compensate(currNode, currNodeNumber,  ri, RIGHT);
         }
         return true;
     }
 }
 
-void BTree::Compensate(Node &currNode, size_t currNodeNumber, size_t pos, RecordIndex &ri, int direction)
+void BTree::Compensate(Node &currNode, size_t pos, RecordIndex &ri, int direction)
 {
     auto sibling = Cache::GetInstance().Pop();
 
@@ -932,7 +932,7 @@ size_t BTree::FindChildNodePos(std::pair<Node, size_t> &parent, size_t childNode
     return pos;
 }
 
-void BTree::ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos, RecordIndex &ri)
+void BTree::ReplaceAndDelete(Node &currNode, size_t nodeNumber, size_t pos)
 {
     auto leftChild = FileManager::GetInstance().GetNode(currNode.childrenNodesNumbers[pos]);
     auto rightChild = FileManager::GetInstance().GetNode(currNode.childrenNodesNumbers[pos + 1]);
@@ -1028,7 +1028,7 @@ RecordIndex BTree::FindReplacement(Node &currNode, size_t nodeNumber, int direct
     }
 }
 
-void BTree::DeleteFromNode(Node &node, size_t nodeNumber, size_t pos, RecordIndex &ri)
+void BTree::DeleteFromNode(Node &node, size_t nodeNumber, size_t pos)
 {
     // remove index and move nodes to the left
     node.indexes[pos].index = INVALID_INDEX;
